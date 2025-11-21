@@ -108,8 +108,6 @@ const loadDipendenti = async () => {
   loadingDipendenti.value = true
   try {
     const { data } = await axios.get(`${BASE_URL}/admin/dipendenti`)
-    console.log('Dipendenti ricevuti:', data)
-
     dipendentiOptions.value = data.map(d => ({
       label: `${d.nome} ${d.cognome}`,
       value: d.id
@@ -134,22 +132,22 @@ const submitSpesa = async () => {
   }
 
   const formData = new FormData()
-  formData.append('id_dipendente', selectedDipendenteId.value)
+  formData.append('id_trasferta', selectedDipendenteId.value)
   formData.append('categoria', categoria.value)
   formData.append('importo', importo.value)
   formData.append('tipo_scontrino', tipo_scontrino.value)
   formData.append('data_spesa', data_spesa.value)
 
+  // Gestione file singolo o multiplo
   const files = uploader.value?.files || []
   files.forEach(f => formData.append('files', f))
 
   try {
-    const res = await axios.post(`${BASE_URL}/spese/`, formData, {
+    await axios.post(`${BASE_URL}/spese/`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 
     $q.notify({ type: 'positive', message: 'Spesa caricata!' })
-    console.log('Spesa caricata:', res.data)
 
     // Reset form
     categoria.value = ''
