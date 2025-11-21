@@ -57,6 +57,7 @@ function toggleLeftDrawer() {
 const linksList = [
   { title: 'Home', icon: 'home', to: '/' },
   { title: 'Spese', icon: 'receipt', to: '/spese' },
+  { title: 'Nuova Trasferta', icon: 'flight_takeoff', to: '/nuova-trasferta' }, // <-- nuova voce
   { title: 'Docs', caption: 'quasar.dev', icon: 'school', link: 'https://quasar.dev' },
   { title: 'Github', caption: 'github.com/quasarframework', icon: 'code', link: 'https://github.com/quasarframework' },
   { title: 'Discord', caption: 'chat.quasar.dev', icon: 'chat', link: 'https://chat.quasar.dev' },
@@ -64,4 +65,5 @@ const linksList = [
   { title: 'Twitter', caption: '@quasarframework', icon: 'rss_feed', link: 'https://twitter.quasar.dev' },
   { title: 'Facebook', caption: '@QuasarFramework', icon: 'public', link: 'https://facebook.quasar.dev' },
 ]
+
 </script>
