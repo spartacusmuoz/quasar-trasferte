@@ -12,8 +12,13 @@
           <q-select
             filled
             label="Dipendente"
-            :options="dipendenti.map(d => ({ label: `${d.nome} ${d.cognome}`, value: d.id }))"
-            v-model="nuovaPrenotazione.id_dipendente"
+            :options="dipendentiOptions"
+            v-model="selectedUserId"
+            option-label="label"
+            option-value="value"
+            emit-value
+            map-options
+            @update:model-value="onUserSelected"
             required
           />
 
@@ -21,8 +26,12 @@
           <q-select
             filled
             label="Trasferta"
-            :options="trasferte.map(t => ({ label: `${t.dipendente_nome} - ${t.luogo_destinazione}`, value: t.id }))"
+            :options="trasferteOptions"
             v-model="nuovaPrenotazione.id_trasferta"
+            option-label="label"
+            option-value="value"
+            emit-value
+            map-options
             required
           />
 
@@ -76,15 +85,15 @@ import { useQuasar } from 'quasar'
 
 const $q = useQuasar()
 const BASE_URL = 'http://127.0.0.1:8000'
-const USER_ID = 6
+const ADMIN_ID = 6 // ID admin per popolare la tabella
 
-// --- DATI ---
-const dipendenti = ref([])
-const trasferte = ref([])
+// --- DATI --- 
+const dipendentiOptions = ref([])
+const trasferteOptions = ref([])
 const prenotazioni = ref([])
 
+const selectedUserId = ref(null)
 const nuovaPrenotazione = ref({
-  id_dipendente: null,
   id_trasferta: null,
   tipo_mezzo: '',
   costo: 0,
@@ -107,31 +116,40 @@ const columns = [
 // --- CARICAMENTO DATI ---
 const loadDipendenti = async () => {
   try {
-    const { data } = await axios.get(`${BASE_URL}/admin/dipendenti`, { headers: { 'x-user-id': USER_ID } })
-    dipendenti.value = data
+    const { data } = await axios.get(`${BASE_URL}/admin/dipendenti`)
+    dipendentiOptions.value = data.map(d => ({ label: `${d.nome} ${d.cognome}`, value: d.id }))
   } catch (err) {
     console.error('Errore caricamento dipendenti', err)
   }
 }
 
-const loadTrasferte = async () => {
+const onUserSelected = async (userId) => {
+  nuovaPrenotazione.value.id_trasferta = null
+  trasferteOptions.value = []
   try {
-    const { data } = await axios.get(`${BASE_URL}/trasferte/`, { headers: { 'x-user-id': USER_ID } })
-    trasferte.value = data.map(t => {
-      const dip = dipendenti.value.find(d => d.id === t.id_dipendente)
-      return { ...t, dipendente_nome: dip ? `${dip.nome} ${dip.cognome}` : 'Sconosciuto' }
+    const { data } = await axios.get(`${BASE_URL}/trasferte/miei`, {
+      headers: { 'x-user-id': userId }
     })
+    trasferteOptions.value = data.map(t => ({
+      label: `${t.luogo_destinazione} (${t.data_partenza} - ${t.data_rientro})`,
+      value: t.id
+    }))
   } catch (err) {
     console.error('Errore caricamento trasferte', err)
+    $q.notify({ type: 'negative', message: 'Errore caricamento trasferte' })
   }
 }
 
+// --- CARICA TUTTE LE PRENOTAZIONI (USANDO ID ADMIN) ---
 const loadPrenotazioni = async () => {
   try {
-    const { data } = await axios.get(`${BASE_URL}/prenotazioni/`, { headers: { 'x-user-id': USER_ID } })
+    const { data } = await axios.get(`${BASE_URL}/prenotazioni/`, {
+      headers: { 'x-user-id': ADMIN_ID }
+    })
     prenotazioni.value = data
   } catch (err) {
     console.error('Errore caricamento prenotazioni', err)
+    $q.notify({ type: 'negative', message: 'Errore caricamento prenotazioni' })
   }
 }
 
@@ -141,41 +159,32 @@ const onFileAdded = (files) => {
 }
 
 const creaPrenotazione = async () => {
-  if (!nuovaPrenotazione.value.id_trasferta) {
-    $q.notify({ type: 'negative', message: 'Seleziona una trasferta valida!' })
+  if (!selectedUserId.value || !nuovaPrenotazione.value.id_trasferta) {
+    $q.notify({ type: 'negative', message: 'Seleziona dipendente e trasferta valide!' })
     return
   }
 
   const formData = new FormData()
-
-  // Creiamo il JSON della prenotazione come in Postman
-  const prenotazioneJson = JSON.stringify({
+  formData.append("prenotazione", JSON.stringify({
     id_trasferta: nuovaPrenotazione.value.id_trasferta,
     tipo_mezzo: nuovaPrenotazione.value.tipo_mezzo,
     fornitore: nuovaPrenotazione.value.fornitore,
     costo: Number(nuovaPrenotazione.value.costo),
     dettagli: nuovaPrenotazione.value.dettagli || ""
-  })
-
-  // Aggiungiamo il campo prenotazione
-  formData.append("prenotazione", prenotazioneJson)
-
-  // Aggiungiamo il file se presente
-  if (nuovaPrenotazione.value.file_biglietto) {
-    formData.append("file_biglietto", nuovaPrenotazione.value.file_biglietto)
-  }
+  }))
+  if (nuovaPrenotazione.value.file_biglietto) formData.append("file_biglietto", nuovaPrenotazione.value.file_biglietto)
 
   try {
-    await axios.post(`${BASE_URL}/prenotazioni/`, formData, {
-      headers: { "x-user-id": USER_ID, "Content-Type": "multipart/form-data" }
+    await axios.post(`${BASE_URL}/prenotazioni/crea`, formData, {
+      headers: { "x-user-id": selectedUserId.value, "Content-Type": "multipart/form-data" }
     })
-
     $q.notify({ type: 'positive', message: 'Prenotazione creata!' })
+
+    // Carica tutte le prenotazioni usando ID admin
     loadPrenotazioni()
 
-    // Reset del form
+    // Reset form
     nuovaPrenotazione.value = {
-      id_dipendente: null,
       id_trasferta: null,
       tipo_mezzo: '',
       costo: 0,
@@ -195,7 +204,6 @@ const creaPrenotazione = async () => {
 // --- ON MOUNT ---
 onMounted(async () => {
   await loadDipendenti()
-  await loadTrasferte()
-  await loadPrenotazioni()
+  loadPrenotazioni()
 })
 </script>
