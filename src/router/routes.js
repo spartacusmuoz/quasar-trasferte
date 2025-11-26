@@ -8,10 +8,16 @@ const routes = [
       { path: 'spese-test', component: () => import('pages/SpeseFormTest.vue') },
       { path: 'nuova-trasferta', component: () => import('pages/PagesNuovaTrasferta.vue') },
 
-      // ⭐ AGGIUNTA QUI: Pagina della Segretaria
+      // ⭐ Pagina della Segretaria
       { 
         path: 'segreteria/trasferte', 
         component: () => import('pages/PagesSegretariaTrasferte.vue') 
+      },
+
+      // ⭐ Pagina Prenotazioni
+      {
+        path: 'segreteria/prenotazioni',
+        component: () => import('pages/PagePrenotazione.vue')
       },
     ],
   },

@@ -11,15 +11,30 @@
           <!-- Select Dipendente -->
           <q-select
             filled
-            v-model="selectedDipendenteId"
+            v-model="selectedUserId"
             :options="dipendentiOptions"
-            :key="dipendentiOptions.length"
             label="Dipendente"
-            emit-value
-            map-options
             option-label="label"
             option-value="value"
+            emit-value
+            map-options
             :loading="loadingDipendenti"
+            @update:model-value="onUserSelected"
+            required
+          />
+
+          <!-- Select Trasferta -->
+          <q-select
+            filled
+            v-if="trasferteOptions.length > 0"
+            v-model="selectedTrasfertaId"
+            :options="trasferteOptions"
+            label="Trasferta"
+            option-label="label"
+            option-value="value"
+            emit-value
+            map-options
+            :loading="loadingTrasferte"
             required
           />
 
@@ -27,13 +42,7 @@
           <q-input filled v-model="categoria" label="Categoria" required />
 
           <!-- Importo -->
-          <q-input
-            filled
-            v-model.number="importo"
-            label="Importo"
-            type="number"
-            required
-          />
+          <q-input filled v-model.number="importo" label="Importo" type="number" required />
 
           <!-- Tipo Scontrino -->
           <q-select
@@ -47,13 +56,7 @@
           />
 
           <!-- Data -->
-          <q-input
-            filled
-            v-model="data_spesa"
-            label="Data Spesa"
-            type="date"
-            required
-          />
+          <q-input filled v-model="data_spesa" label="Data Spesa" type="date" required />
 
           <!-- File uploader -->
           <q-uploader
@@ -68,6 +71,7 @@
           <div class="q-mt-md">
             <q-btn label="Invia Spesa" color="primary" type="submit" />
           </div>
+
         </q-form>
       </q-card-section>
     </q-card>
@@ -83,14 +87,18 @@ const $q = useQuasar()
 const BASE_URL = 'http://127.0.0.1:8000'
 
 // Form fields
+const selectedUserId = ref(null)
+const selectedTrasfertaId = ref(null)
 const categoria = ref('')
 const importo = ref(null)
 const tipo_scontrino = ref('')
 const data_spesa = ref(new Date().toISOString().split('T')[0])
-const selectedDipendenteId = ref(null)
-const dipendentiOptions = ref([])
 const uploader = ref(null)
+
+const dipendentiOptions = ref([])
+const trasferteOptions = ref([])
 const loadingDipendenti = ref(true)
+const loadingTrasferte = ref(false)
 
 const tipiScontrino = [
   { label: 'Aereo', value: 'aereo' },
@@ -101,9 +109,7 @@ const tipiScontrino = [
   { label: 'Altro', value: 'altro' }
 ]
 
-// =======================
 // Carica lista dipendenti
-// =======================
 const loadDipendenti = async () => {
   loadingDipendenti.value = true
   try {
@@ -113,52 +119,70 @@ const loadDipendenti = async () => {
       value: d.id
     }))
   } catch (err) {
-    console.error('Errore caricamento dipendenti', err)
-    $q.notify({ type: 'negative', message: 'Impossibile caricare i dipendenti' })
+    console.error(err)
+    $q.notify({ type: 'negative', message: 'Errore caricamento dipendenti' })
   } finally {
     loadingDipendenti.value = false
   }
 }
 
+// Quando l’utente è selezionato
+const onUserSelected = async (userId) => {
+  selectedTrasfertaId.value = null
+  trasferteOptions.value = []
+  loadingTrasferte.value = true
+  try {
+    const { data } = await axios.get(`${BASE_URL}/trasferte/miei`, {
+      headers: { 'x-user-id': userId }
+    })
+    trasferteOptions.value = data.map(t => ({
+      label: `${t.luogo_destinazione} (${t.data_partenza} - ${t.data_rientro})`,
+      value: t.id
+    }))
+  } catch (err) {
+    console.error(err)
+    $q.notify({ type: 'negative', message: 'Errore caricamento trasferte' })
+  } finally {
+    loadingTrasferte.value = false
+  }
+}
+
 onMounted(loadDipendenti)
 
-// =======================
-// Submit spesa
-// =======================
 const submitSpesa = async () => {
-  if (!selectedDipendenteId.value) {
-    $q.notify({ type: 'warning', message: 'Seleziona un dipendente!' })
+  if (!selectedUserId.value || !selectedTrasfertaId.value) {
+    $q.notify({ type: 'warning', message: 'Seleziona dipendente e trasferta!' })
     return
   }
 
   const formData = new FormData()
-  formData.append('id_trasferta', selectedDipendenteId.value)
+  formData.append('id_trasferta', selectedTrasfertaId.value)
   formData.append('categoria', categoria.value)
   formData.append('importo', importo.value)
   formData.append('tipo_scontrino', tipo_scontrino.value)
   formData.append('data_spesa', data_spesa.value)
 
-  // Gestione file singolo o multiplo
   const files = uploader.value?.files || []
   files.forEach(f => formData.append('files', f))
 
   try {
     await axios.post(`${BASE_URL}/spese/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'x-user-id': selectedUserId.value }
     })
 
     $q.notify({ type: 'positive', message: 'Spesa caricata!' })
 
     // Reset form
+    selectedTrasfertaId.value = null
     categoria.value = ''
     importo.value = null
     tipo_scontrino.value = ''
     data_spesa.value = new Date().toISOString().split('T')[0]
-    selectedDipendenteId.value = null
     uploader.value?.reset()
   } catch (err) {
     console.error(err)
     $q.notify({ type: 'negative', message: 'Errore durante il caricamento della spesa' })
   }
 }
+
 </script>

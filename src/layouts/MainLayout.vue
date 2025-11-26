@@ -13,15 +13,13 @@
     <!-- DRAWER -->
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
       <q-list>
-        <q-item-label header> Menu </q-item-label>
+        <q-item-label header>Menu</q-item-label>
 
-        <!-- Itera sulle voci e crea router-link se "to" presente -->
         <q-item
           v-for="link in linksList"
           :key="link.title"
           clickable
           :to="link.to ? link.to : null"
-          target="_blank" 
           v-bind="link.to ? {} : { href: link.link }"
         >
           <q-item-section avatar>
@@ -53,20 +51,12 @@ function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
-// ⭐ Voci menu aggiornate
+// Voci menu
 const linksList = [
   { title: 'Home', icon: 'home', to: '/' },
   { title: 'Spese', icon: 'receipt', to: '/spese' },
   { title: 'Nuova Trasferta', icon: 'flight_takeoff', to: '/nuova-trasferta' },
-
-  // ⭐ NUOVA VOCE MENU AGGIUNTA QUI
   { title: 'Segreteria - Trasferte', icon: 'assignment', to: '/segreteria/trasferte' },
-
-  //{ title: 'Docs', caption: 'quasar.dev', icon: 'school', link: 'https://quasar.dev' },
-  //{ title: 'Github', caption: 'github.com/quasarframework', icon: 'code', link: 'https://github.com/quasarframework' },
-  //{ title: 'Discord', caption: 'chat.quasar.dev', icon: 'chat', link: 'https://chat.quasar.dev' },
-  //{ title: 'Forum', caption: 'forum.quasar.dev', icon: 'record_voice_over', link: 'https://forum.quasar.dev' },
-  //{ title: 'Twitter', caption: '@quasarframework', icon: 'rss_feed', link: 'https://twitter.quasar.dev' },
-  //{ title: 'Facebook', caption: '@QuasarFramework', icon: 'public', link: 'https://facebook.quasar.dev' },
+  { title: 'Segreteria - Prenotazioni', icon: 'airplane_ticket', to: '/segreteria/prenotazioni' },
 ]
 </script>

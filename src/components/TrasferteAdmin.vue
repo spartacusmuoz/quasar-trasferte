@@ -125,7 +125,7 @@ const submitTrasferta = async () => {
   }
 
   try {
-    const res = await axios.post(`${BASE_URL}/trasferte/`, body, {
+    const res = await axios.post(`${BASE_URL}/trasferte`, body, {
       headers: { 'x-user-id': selectedDipendenteId.value } // se serve header
     })
     $q.notify({ type: 'positive', message: 'Trasferta inviata!' })

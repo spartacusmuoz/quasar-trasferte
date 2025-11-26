@@ -1,6 +1,5 @@
 <template>
   <q-page class="q-pa-md">
-
     <q-card>
       <q-card-section>
         <div class="text-h6">Richieste di Trasferta</div>
@@ -15,14 +14,25 @@
       >
         <template v-slot:body-cell-azioni="props">
           <q-td>
-            <q-btn color="positive" icon="check" size="sm" flat @click="approva(props.row)" />
-            <q-btn color="negative" icon="close" size="sm" flat @click="rifiuta(props.row)" />
+            <q-btn
+              color="positive"
+              icon="check"
+              size="sm"
+              flat
+              @click="approva(props.row)"
+            />
+            <q-btn
+              color="negative"
+              icon="close"
+              size="sm"
+              flat
+              @click="rifiuta(props.row)"
+            />
           </q-td>
         </template>
       </q-table>
 
     </q-card>
-
   </q-page>
 </template>
 
@@ -33,14 +43,21 @@ import { useQuasar } from 'quasar'
 
 const $q = useQuasar()
 const BASE_URL = 'http://127.0.0.1:8000'
-const USER_ID = 6   // ⭐ ID SEGRETERIA
+
+// 👉 Recupero token e user ID dal login
+const token = localStorage.getItem('access_token')
+const USER_ID = localStorage.getItem('user_id') ?? 6
+
+// 👉 Headers comuni
+const headers = {
+  'Authorization': `Bearer ${token}`,
+  'x-user-id': USER_ID,
+  'Content-Type': 'application/json'
+}
 
 const trasferte = ref([])
 const dipendenti = ref([])
 
-// ---------------------------
-// COLONNE TABELLA
-// ---------------------------
 const columns = [
   { name: 'id', label: 'ID', field: 'id', sortable: true },
   { name: 'dipendente', label: 'Dipendente', field: 'dipendente_nome' },
@@ -56,9 +73,7 @@ const columns = [
 // ---------------------------
 const loadDipendenti = async () => {
   try {
-    const { data } = await axios.get(`${BASE_URL}/admin/dipendenti`, {
-      headers: { 'x-user-id': USER_ID }
-    })
+    const { data } = await axios.get(`${BASE_URL}/admin/dipendenti`, { headers })
     dipendenti.value = data
   } catch (err) {
     console.error('Errore caricamento dipendenti', err)
@@ -66,13 +81,11 @@ const loadDipendenti = async () => {
 }
 
 // ---------------------------
-// CARICA TRASFERTE + MERGE NOME DIPENDENTE
+// CARICA TRASFERTE
 // ---------------------------
 const loadTrasferte = async () => {
   try {
-    const { data } = await axios.get(`${BASE_URL}/trasferte/trasferte/`, {
-      headers: { 'x-user-id': USER_ID }
-    })
+    const { data } = await axios.get(`${BASE_URL}/trasferte`, { headers })
 
     trasferte.value = data.map(t => {
       const dip = dipendenti.value.find(d => d.id === t.id_dipendente)
@@ -97,15 +110,16 @@ onMounted(async () => {
 // ---------------------------
 const approva = async (row) => {
   try {
-    await axios.put(
-      `${BASE_URL}/trasferte/trasferte/${row.id}/`,
+    await axios.patch(
+      `${BASE_URL}/trasferte/${row.id}/stato`,
       { stato: 'approvata' },
-      { headers: { 'x-user-id': USER_ID } }
+      { headers }
     )
+
     $q.notify({ type: 'positive', message: 'Trasferta approvata!' })
     loadTrasferte()
   } catch (err) {
-    console.error(err)
+    console.error('Errore approvazione', err)
   }
 }
 
@@ -114,15 +128,16 @@ const approva = async (row) => {
 // ---------------------------
 const rifiuta = async (row) => {
   try {
-    await axios.put(
-      `${BASE_URL}/trasferte/trasferte/${row.id}/`,
+    await axios.patch(
+      `${BASE_URL}/trasferte/${row.id}/stato`,
       { stato: 'rifiutata' },
-      { headers: { 'x-user-id': USER_ID } }
+      { headers }
     )
+
     $q.notify({ type: 'negative', message: 'Trasferta rifiutata' })
     loadTrasferte()
   } catch (err) {
-    console.error(err)
+    console.error('Errore rifiuto', err)
   }
 }
 </script>
