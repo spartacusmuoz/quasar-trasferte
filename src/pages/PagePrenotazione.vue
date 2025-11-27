@@ -105,7 +105,7 @@ const nuovaPrenotazione = ref({
 // --- COLONNE TABELLA ---
 const columns = [
   { name: 'id', label: 'ID', field: 'id', sortable: true },
-  { name: 'dipendente', label: 'Dipendente', field: 'id_dipendente' },
+  { name: 'dipendente', label: 'Dipendente', field: 'dipendente_nome' },
   { name: 'trasferta', label: 'Trasferta', field: 'id_trasferta' },
   { name: 'tipo_mezzo', label: 'Tipo Mezzo', field: 'tipo_mezzo' },
   { name: 'fornitore', label: 'Fornitore', field: 'fornitore' },
@@ -132,7 +132,8 @@ const onUserSelected = async (userId) => {
     })
     trasferteOptions.value = data.map(t => ({
       label: `${t.luogo_destinazione} (${t.data_partenza} - ${t.data_rientro})`,
-      value: t.id
+      value: t.id,
+      dipendente_nome: dipendentiOptions.value.find(d => d.value === t.id_dipendente)?.label || 'Sconosciuto'
     }))
   } catch (err) {
     console.error('Errore caricamento trasferte', err)
@@ -143,10 +144,25 @@ const onUserSelected = async (userId) => {
 // --- CARICA TUTTE LE PRENOTAZIONI (USANDO ID ADMIN) ---
 const loadPrenotazioni = async () => {
   try {
-    const { data } = await axios.get(`${BASE_URL}/prenotazioni/`, {
+    const { data: prenData } = await axios.get(`${BASE_URL}/prenotazioni/`, {
       headers: { 'x-user-id': ADMIN_ID }
     })
-    prenotazioni.value = data
+
+    // Carica tutte le trasferte dell'admin per creare mappa id_trasferta -> dipendente
+    const { data: trasferteData } = await axios.get(`${BASE_URL}/trasferte/`, {
+      headers: { 'x-user-id': ADMIN_ID }
+    })
+    const trasfMap = {}
+    trasferteData.forEach(t => {
+      const dip = dipendentiOptions.value.find(d => d.value === t.id_dipendente)
+      trasfMap[t.id] = dip ? dip.label : 'Sconosciuto'
+    })
+
+    // Arricchisci le prenotazioni con dipendente_nome
+    prenotazioni.value = prenData.map(p => ({
+      ...p,
+      dipendente_nome: trasfMap[p.id_trasferta] || 'Sconosciuto'
+    }))
   } catch (err) {
     console.error('Errore caricamento prenotazioni', err)
     $q.notify({ type: 'negative', message: 'Errore caricamento prenotazioni' })
@@ -180,7 +196,7 @@ const creaPrenotazione = async () => {
     })
     $q.notify({ type: 'positive', message: 'Prenotazione creata!' })
 
-    // Carica tutte le prenotazioni usando ID admin
+    // Aggiorna la tabella con nomi dei dipendenti
     loadPrenotazioni()
 
     // Reset form

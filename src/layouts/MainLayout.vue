@@ -51,12 +51,18 @@ function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
-// Voci menu
+// Voci menu aggiornate
 const linksList = [
+  // 🌟 Voci Dipendente
   { title: 'Home', icon: 'home', to: '/' },
   { title: 'Spese', icon: 'receipt', to: '/spese' },
   { title: 'Nuova Trasferta', icon: 'flight_takeoff', to: '/nuova-trasferta' },
+  { title: 'Le Mie Prenotazioni', icon: 'airplane_ticket', to: '/prenotazioni' },
+
+  // 🌟 Voci Segreteria / Manager
   { title: 'Segreteria - Trasferte', icon: 'assignment', to: '/segreteria/trasferte' },
-  { title: 'Segreteria - Prenotazioni', icon: 'airplane_ticket', to: '/segreteria/prenotazioni' },
+  { title: 'Segreteria - Prenotazioni', icon: 'flight_land', to: '/segreteria/prenotazioni' },
+  { title: 'Segreteria - Spese', icon: 'payments', to: '/segreteria/spese' },
 ]
+
 </script>
