@@ -5,8 +5,23 @@
     <q-header elevated>
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
-        <q-toolbar-title>Quasar App</q-toolbar-title>
+
+        <q-toolbar-title>
+          Quasar App
+        </q-toolbar-title>
+
         <div>Quasar v{{ $q.version }}</div>
+
+        <!-- Selezione ruolo -->
+        <q-select
+          outlined
+          dense
+          style="width: 150px; margin-left: 16px"
+          v-model="currentRole"
+          :options="roleOptions"
+          emit-value
+          map-options
+        />
       </q-toolbar>
     </q-header>
 
@@ -19,12 +34,12 @@
           v-for="link in linksList"
           :key="link.title"
           clickable
-          :to="link.to ? link.to : null"
-          v-bind="link.to ? {} : { href: link.link }"
+          :to="link.to"
         >
           <q-item-section avatar>
             <q-icon :name="link.icon" />
           </q-item-section>
+
           <q-item-section>
             <q-item-label>{{ link.title }}</q-item-label>
             <q-item-label caption>{{ link.caption }}</q-item-label>
@@ -43,26 +58,49 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const leftDrawerOpen = ref(false)
-
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
-// Voci menu aggiornate
-const linksList = [
-  // 🌟 Voci Dipendente
-  { title: 'Home', icon: 'home', to: '/' },
-  { title: 'Spese', icon: 'receipt', to: '/spese' },
-  { title: 'Nuova Trasferta', icon: 'flight_takeoff', to: '/nuova-trasferta' },
-  { title: 'Le Mie Prenotazioni', icon: 'airplane_ticket', to: '/prenotazioni' },
+// --- RUOLO SELEZIONATO ---
+const currentRole = ref('dipendente')
 
-  // 🌟 Voci Segreteria / Manager
-  { title: 'Segreteria - Trasferte', icon: 'assignment', to: '/segreteria/trasferte' },
-  { title: 'Segreteria - Prenotazioni', icon: 'flight_land', to: '/segreteria/prenotazioni' },
-  { title: 'Segreteria - Spese', icon: 'payments', to: '/segreteria/spese' },
+const roleOptions = [
+  { label: 'Dipendente', value: 'dipendente' },
+  { label: 'Segreteria', value: 'segreteria' }
 ]
 
+// 🔥 Quando cambia ruolo → vai alla dashboard corretta
+watch(currentRole, (newRole) => {
+  if (newRole === 'dipendente') {
+    router.push('/dipendente/dashboard')
+  } else {
+    router.push('/segreteria/dashboard')
+  }
+})
+
+// --- MENU DINAMICO ---
+const linksList = computed(() => {
+  if (currentRole.value === 'dipendente') {
+    return [
+      { title: 'Dashboard Dipendente', icon: 'dashboard', to: '/dipendente/dashboard' },
+      { title: 'Prenotazioni', icon: 'assignment', to: '/dipendente/prenotazioni' },
+      { title: 'Spese', icon: 'receipt', to: '/dipendente/spese' },
+      { title: 'Trasferte', icon: 'flight_takeoff', to: '/dipendente/trasferte' }
+    ]
+  } else {
+    return [
+      { title: 'Dashboard Segreteria', icon: 'dashboard', to: '/segreteria/dashboard' },
+      { title: 'Trasferte', icon: 'assignment', to: '/segreteria/trasferte' },
+      { title: 'Prenotazioni', icon: 'airplane_ticket', to: '/segreteria/prenotazioni' },
+      { title: 'Spese', icon: 'payments', to: '/segreteria/spese' }
+    ]
+  }
+})
 </script>
