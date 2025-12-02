@@ -1,6 +1,6 @@
 <template>
   <q-page class="q-pa-md">
-    <div class="text-h5 q-mb-lg">Dashboard Segreteria</div>
+    <div class="text-h5 q-mb-lg">Portale Segreteria</div>
 
     <div class="row q-gutter-md q-mb-md">
       <q-btn

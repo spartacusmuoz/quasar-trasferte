@@ -7,10 +7,11 @@
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
 
         <q-toolbar-title>
-          Quasar App
+          Menu
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+       <div>Benvenuto al portale</div>
+
 
         <!-- Selezione ruolo -->
         <q-select
@@ -89,14 +90,14 @@ watch(currentRole, (newRole) => {
 const linksList = computed(() => {
   if (currentRole.value === 'dipendente') {
     return [
-      { title: 'Dashboard Dipendente', icon: 'dashboard', to: '/dipendente/dashboard' },
+      { title: 'Portale Dipendente', icon: 'dashboard', to: '/dipendente/dashboard' },
       { title: 'Prenotazioni', icon: 'assignment', to: '/dipendente/prenotazioni' },
       { title: 'Spese', icon: 'receipt', to: '/dipendente/spese' },
       { title: 'Trasferte', icon: 'flight_takeoff', to: '/dipendente/trasferte' }
     ]
   } else {
     return [
-      { title: 'Dashboard Segreteria', icon: 'dashboard', to: '/segreteria/dashboard' },
+      { title: 'Portale Segreteria', icon: 'dashboard', to: '/segreteria/dashboard' },
       { title: 'Trasferte', icon: 'assignment', to: '/segreteria/trasferte' },
       { title: 'Prenotazioni', icon: 'airplane_ticket', to: '/segreteria/prenotazioni' },
       { title: 'Spese', icon: 'payments', to: '/segreteria/spese' }

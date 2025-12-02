@@ -14,6 +14,14 @@ const routes = [
       // 🚀 DASHBOARD SEGRETERIA
       { path: 'segreteria/dashboard', component: () => import('pages/DashboardSegreteria.vue'), name: 'dashboard-segreteria' },
       { path: 'segreteria/trasferte', component: () => import('pages/PagesSegretariaTrasferte.vue'), name: 'segreteria-trasferte' },
+      
+      // **NUOVA PAGINA HOTEL MAPPA**
+      { 
+        path: 'segreteria/trasferte/:idTrasferta/hotel', 
+        component: () => import('pages/HotelMappa.vue'), 
+        name: 'hotel-mappa' 
+      },  // <- qui mancava la virgola
+
       { path: 'segreteria/prenotazioni', component: () => import('pages/PagePrenotazione.vue'), name: 'segreteria-prenotazioni' },
       { path: 'segreteria/spese', component: () => import('pages/SegretariaSpese.vue'), name: 'segreteria-spese' },
     ],

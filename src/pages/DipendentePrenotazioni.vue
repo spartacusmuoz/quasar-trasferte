@@ -22,13 +22,14 @@
       Nessuna prenotazione disponibile.
     </div>
 
-    <q-row gutter="16px" v-else>
-      <q-col
+    <div class="row q-col-gutter-md" v-else>
+      <!-- CARD TRASFERTA -->
+      <div
         v-for="trasf in trasferte"
         :key="trasf.id"
-        cols="12" sm="6" md="6"
+        class="col-12 col-sm-6 col-md-6"
       >
-        <q-card bordered class="shadow-1">
+        <q-card bordered class="shadow-2 q-mb-md">
 
           <!-- HEADER TRASFERTA -->
           <q-card-section class="row items-center q-gutter-sm bg-grey-2 text-black">
@@ -37,37 +38,50 @@
             <div class="text-subtitle2 q-ml-xs">ID: {{ trasf.id }}</div>
           </q-card-section>
 
-          <!-- ELENCO PRENOTAZIONI -->
-          <div v-for="pren in trasf.prenotazioni" :key="pren.id" class="q-mt-sm">
-            <q-card-section :class="cardColor(pren)" class="q-pa-sm rounded-borders shadow-2">
-              <div class="row items-center q-gutter-sm">
-                <q-icon :name="iconForPrenotazione(pren)" size="24px"/>
-                <div class="text-subtitle1">
-                  {{ pren.tipo_mezzo || pren.tipo_alloggio || 'Nessuna prenotazione' }}
+          <!-- PRENOTAZIONI -->
+          <div
+            v-for="pren in trasf.prenotazioni"
+            :key="pren.id"
+            class="q-mt-sm"
+          >
+            <q-card-section
+              class="q-pa-sm rounded-borders shadow-2"
+              :style="{ backgroundColor: colorTrasferta(pren.id) }"
+            >
+
+              <!-- BLOCCO AFFIANCATO -->
+              <div class="row q-col-gutter-md">
+
+                <!-- BLOCCO TRASPORTO -->
+                <div class="col-12 col-md-6" v-if="pren.tipo_mezzo">
+                  <div class="row items-center q-gutter-xs">
+                    <q-icon :name="iconForTrasporto(pren.tipo_mezzo)" size="24px"/>
+                    <div class="text-subtitle1">{{ pren.tipo_mezzo }}</div>
+                  </div>
+                  <div class="q-mt-xs">
+                    <div>Costo: {{ pren.costo }} €</div>
+                    <div>Fornitore: {{ pren.fornitore }}</div>
+                    <div>Dettagli: {{ pren.dettagli }}</div>
+                  </div>
                 </div>
+
+                <!-- BLOCCO ALLOGGIO -->
+                <div class="col-12 col-md-6" v-if="pren.tipo_alloggio">
+                  <div class="row items-center q-gutter-xs">
+                    <q-icon :name="iconForAlloggio(pren.tipo_alloggio)" size="24px"/>
+                    <div class="text-subtitle1">{{ pren.tipo_alloggio }}</div>
+                  </div>
+                  <div class="q-mt-xs">
+                    <div>Struttura: {{ pren.nome_struttura }}</div>
+                    <div>Costo: {{ pren.costo_alloggio }} €</div>
+                    <div>Tipo: {{ pren.tipo_alloggio }}</div>
+                  </div>
+                </div>
+
               </div>
 
-              <!-- Dettagli viaggio -->
-              <div v-if="pren.tipo_mezzo" class="q-mt-xs">
-                <div>Costo: {{ pren.costo }} €</div>
-                <div>Fornitore: {{ pren.fornitore }}</div>
-                <div>Dettagli: {{ pren.dettagli }}</div>
-              </div>
-
-              <!-- Dettagli alloggio -->
-              <div v-if="pren.tipo_alloggio" class="q-mt-xs">
-                <div>Struttura: {{ pren.nome_struttura }}</div>
-                <div>Tipo: {{ pren.tipo_alloggio }}</div>
-                <div>Costo: {{ pren.costo_alloggio }} €</div>
-              </div>
-
-              <!-- Prenotazioni vuote -->
-              <div v-if="!pren.tipo_mezzo && !pren.tipo_alloggio" class="q-mt-xs">
-                Nessun dettaglio disponibile
-              </div>
-
-              <!-- Pulsante visualizza file -->
-              <q-card-actions align="right">
+              <!-- PULSANTE VISUALIZZA FILE -->
+              <q-card-actions align="center" class="q-mt-md">
                 <q-btn
                   flat
                   color="primary"
@@ -76,12 +90,13 @@
                   @click="visualizzaFile(pren.id)"
                 />
               </q-card-actions>
+
             </q-card-section>
           </div>
 
         </q-card>
-      </q-col>
-    </q-row>
+      </div>
+    </div>
 
   </q-page>
 </template>
@@ -98,38 +113,43 @@ const dipendentiOptions = ref([])
 const selectedDipendente = ref(null)
 const trasferte = ref([])
 
-// ICONA E COLORI
-const iconForPrenotazione = (pren) => {
-  if (pren.tipo_mezzo) {
-    switch(pren.tipo_mezzo){
-      case 'aereo': return 'flight'
-      case 'treno': return 'train'
-      case 'taxi':
-      case 'auto': return 'directions_car'
-      default: return 'help_outline'
-    }
-  } else if (pren.tipo_alloggio) {
-    switch(pren.tipo_alloggio){
-      case 'Hotel': return 'hotel'
-      case 'Bed & Breakfast': return 'holiday_village'
-      case 'Appartamento': return 'apartment'
-      case 'Airbnb': return 'home_work'
-      case 'Ostello': return 'groups'
-      default: return 'house'
-    }
+/* ======================================
+   COLORI VARI PER LE PRENOTAZIONI
+====================================== */
+const prenColors = [
+  '#FF7043', '#FFB74D', '#81C784', '#4DB6AC', '#64B5F6', '#BA68C8', '#F06292'
+]
+const colorTrasferta = (id) => prenColors[id % prenColors.length]
+
+/* ======================================
+   ICONA PRENOTAZIONE
+====================================== */
+const iconForTrasporto = (tipo_mezzo) => {
+  if (!tipo_mezzo) return null
+  switch(tipo_mezzo){
+    case 'aereo': return 'flight'
+    case 'treno': return 'train'
+    case 'taxi':
+    case 'auto': return 'directions_car'
+    default: return 'help_outline'
   }
-  return 'help_outline'
 }
 
-const cardColor = (pren) => {
-  if(pren.tipo_mezzo) return 'bg-orange-3 text-black'
-  if(pren.tipo_alloggio) return 'bg-red-3 text-black'
-  return 'bg-grey-1 text-black'
+const iconForAlloggio = (tipo_alloggio) => {
+  if (!tipo_alloggio) return null
+  switch(tipo_alloggio){
+    case 'Hotel': return 'hotel'
+    case 'Bed & Breakfast': return 'holiday_village'
+    case 'Appartamento': return 'apartment'
+    case 'Airbnb': return 'home_work'
+    case 'Ostello': return 'groups'
+    default: return 'house'
+  }
 }
 
-// ===============================
-// LOAD DIPENDENTI
-// ===============================
+/* ======================================
+   LOAD DIPENDENTI
+====================================== */
 const loadDipendenti = async () => {
   try {
     const { data } = await axios.get(`${BASE_URL}/admin/dipendenti`)
@@ -143,9 +163,9 @@ const loadDipendenti = async () => {
   }
 }
 
-// ===============================
-// LOAD PRENOTAZIONI
-// ===============================
+/* ======================================
+   LOAD PRENOTAZIONI
+====================================== */
 const loadPrenotazioni = async () => {
   if (!selectedDipendente.value) return
 
@@ -157,13 +177,11 @@ const loadPrenotazioni = async () => {
       headers: { "x-user-id": selectedDipendente.value.id }
     })
 
-    // Mappa id_trasferta -> info leggibile
     const trasfMap = {}
     trasferteData.forEach(t => {
       trasfMap[t.id] = `${t.luogo_destinazione} (${t.data_partenza} - ${t.data_rientro})`
     })
 
-    // Raggruppa prenotazioni per trasferta senza perdere alcuna prenotazione
     const grouped = {}
     prenData.forEach(p => {
       const idT = p.id_trasferta
@@ -173,7 +191,6 @@ const loadPrenotazioni = async () => {
       grouped[idT].prenotazioni.push(p)
     })
 
-    // Anche trasferte senza prenotazioni
     trasferteData.forEach(t => {
       if(!grouped[t.id]){
         grouped[t.id] = { id: t.id, trasferta_info: trasfMap[t.id] || 'Sconosciuta', prenotazioni: [] }
@@ -188,9 +205,9 @@ const loadPrenotazioni = async () => {
   }
 }
 
-// ===============================
-// VISUALIZZA FILE
-// ===============================
+/* ======================================
+   VISUALIZZA FILE
+====================================== */
 const visualizzaFile = async (prenotazioneId) => {
   try {
     const response = await axios.get(`${BASE_URL}/prenotazioni/file/${prenotazioneId}`, {
