@@ -101,7 +101,6 @@ const dipendentiOptions = ref([])
 const trasferteOptions = ref([])
 const prenotazioni = ref([])
 const loadingDipendenti = ref(true)
-
 const selectedDipendenteId = ref(null)
 
 const prenotazione = ref({
