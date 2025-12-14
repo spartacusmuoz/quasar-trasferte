@@ -99,6 +99,7 @@ const ADMIN_ID = 6
 // ====== State ======
 const dipendentiOptions = ref([])
 const trasferteOptions = ref([])
+const trasferteAll = ref([]) // tutte le trasferte, serve per popolare prenotazioni
 const prenotazioni = ref([])
 const loadingDipendenti = ref(true)
 const selectedDipendenteId = ref(null)
@@ -130,6 +131,8 @@ const columns = [
   { name: 'nome_struttura', label: 'Struttura', field: 'nome_struttura' },
   { name: 'costo_alloggio', label: 'Costo Alloggio', field: 'costo_alloggio' },
   { name: 'indirizzo', label: 'Indirizzo', field: 'indirizzo' },
+  { name: 'chk_in', label: 'Check-In', field: 'chk_in', sortable: true },
+  { name: 'chk_out', label: 'Check-Out', field: 'chk_out', sortable: true },
   { name: 'citta', label: 'Città', field: 'citta' }
 ]
 
@@ -150,23 +153,38 @@ const loadDipendenti = async () => {
   }
 }
 
-// ====== Caricamento trasferte per dipendente ======
+// ====== Caricamento trasferte per selezione dipendente ======
 const loadTrasferte = async () => {
   trasferteOptions.value = []
   prenotazione.value.id_trasferta = null
   if (!selectedDipendenteId.value) return
 
-  try {
-    const { data } = await axios.get(`${BASE_URL}/trasferte/miei`, {
-      headers: { 'x-user-id': selectedDipendenteId.value }
-    })
-    trasferteOptions.value = data.map(t => ({
+  // Filtra le trasferte per dipendente
+  trasferteOptions.value = trasferteAll.value
+    .filter(t => t.id_dipendente === selectedDipendenteId.value)
+    .map(t => ({
       label: `${t.luogo_destinazione} (${t.data_partenza} - ${t.data_rientro})`,
-      value: t.id
+      value: t.id,
+      id_dipendente: t.id_dipendente,
+      luogo_destinazione: t.luogo_destinazione
+    }))
+}
+
+// ====== Caricamento tutte le trasferte (necessario per popolare prenotazioni) ======
+const loadTrasferteAll = async () => {
+  try {
+    const { data } = await axios.get(`${BASE_URL}/trasferte`, {
+      headers: { 'x-user-id': ADMIN_ID }
+    })
+    trasferteAll.value = data.map(t => ({
+      id: t.id,
+      id_dipendente: t.id_dipendente,
+      luogo_destinazione: t.luogo_destinazione,
+      data_partenza: t.data_partenza,
+      data_rientro: t.data_rientro
     }))
   } catch (err) {
-    console.error(err)
-    $q.notify({ type: 'negative', message: 'Errore caricamento trasferte' })
+    console.error('Errore caricamento trasferte', err)
   }
 }
 
@@ -180,13 +198,17 @@ const onFileAdded = (files) => {
 
 // ====== Creazione prenotazione ======
 const creaPrenotazione = async () => {
-  if (!selectedDipendenteId.value) {
-    $q.notify({ type: 'warning', message: 'Seleziona un dipendente!' })
+  if (!prenotazione.value.id_trasferta) {
+    $q.notify({ type: 'warning', message: 'Seleziona una trasferta!' })
     return
   }
 
+  // Trova la trasferta selezionata
+  const trasferta = trasferteAll.value.find(t => t.id === prenotazione.value.id_trasferta)
+
   const payload = {
     id_trasferta: prenotazione.value.id_trasferta,
+    id_dipendente: trasferta ? trasferta.id_dipendente : null,
     tipo_mezzo: prenotazione.value.tipo_mezzo,
     costo: Number(prenotazione.value.costo),
     fornitore: prenotazione.value.fornitore,
@@ -195,7 +217,7 @@ const creaPrenotazione = async () => {
     nome_struttura: prenotazione.value.nome_struttura,
     costo_alloggio: Number(prenotazione.value.costo_alloggio),
     indirizzo: prenotazione.value.indirizzo,
-    citta: prenotazione.value.citta
+    citta: trasferta ? trasferta.luogo_destinazione : ''
   }
 
   const formData = new FormData()
@@ -206,7 +228,7 @@ const creaPrenotazione = async () => {
   try {
     await axios.post(`${BASE_URL}/prenotazioni/crea`, formData, {
       headers: {
-        'x-user-id': selectedDipendenteId.value,
+        'x-user-id': trasferta ? trasferta.id_dipendente : ADMIN_ID,
         'Content-Type': 'multipart/form-data'
       }
     })
@@ -239,7 +261,26 @@ const loadPrenotazioni = async () => {
     const { data } = await axios.get(`${BASE_URL}/prenotazioni/`, {
       headers: { 'x-user-id': ADMIN_ID }
     })
-    prenotazioni.value = data
+
+    prenotazioni.value = data.map(pren => {
+      // trova la trasferta corrispondente
+      const trasferta = trasferteAll.value.find(t => t.id === pren.id_trasferta)
+      const idDip = trasferta ? trasferta.id_dipendente : null
+
+      // trova il nome del dipendente
+      const dip = dipendentiOptions.value.find(d => d.value === idDip)
+      const dipendente_nome = dip ? dip.label : ''
+
+      // prende la città dalla trasferta
+      const citta = trasferta ? trasferta.luogo_destinazione : ''
+
+      return {
+        ...pren,
+        id_dipendente: idDip,
+        dipendente_nome,
+        citta
+      }
+    })
   } catch (err) {
     console.error(err)
     $q.notify({ type: 'negative', message: 'Errore caricamento prenotazioni' })
@@ -249,6 +290,7 @@ const loadPrenotazioni = async () => {
 // ====== onMounted ======
 onMounted(async () => {
   await loadDipendenti()
+  await loadTrasferteAll() // carica tutte le trasferte
   loadPrenotazioni()
 })
 </script>

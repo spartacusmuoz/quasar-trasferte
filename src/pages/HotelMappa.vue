@@ -19,54 +19,78 @@
     <!-- Mini‑Tabella Hotel -->
     <table border="1" style="margin-top:20px; width:100%;" v-if="selectedHotels.length > 0">
       <thead>
-        <tr>
-          <th>Hotel</th><th>ID Hotel</th><th>Trasferta</th><th>Indirizzo</th>
-          <th>Stelle</th><th>Prenotazione</th><th>Costo Alloggio</th><th>Azioni</th>
-        </tr>
-      </thead>
+  <tr>
+    <th>Hotel</th>
+    <th>ID Hotel</th>
+    <th>Trasferta</th>
+    <th>Indirizzo</th>
+    <th>Stelle</th>
+    <th>Check-in</th>
+    <th>Check-out</th>
+    <th>Prenotazione</th>
+    <th>Costo Alloggio</th>
+    <th>Azioni</th>
+  </tr>
+</thead>
+
       <tbody>
         <template v-for="h in selectedHotels" :key="h.idHotel">
           <tr>
-            <td>{{ h.nome }}</td>
-            <td>{{ h.idHotel }}</td>
-            <td>{{ h.idTrasferta }}</td>
-            <td>{{ h.indirizzo || 'Indirizzo non disponibile' }}</td>
-            <td>{{ h.stars || 'N/A' }}</td>
-            <td>
-              <select v-model.number="h.selectedPrenotazione">
-                <option value="">-- scegli una prenotazione --</option>
-                <option v-for="p in prenotazioni" :key="p.id" :value="p.id">
-                  [{{ p.id }}] {{ p.nome_struttura || 'Hotel' }} - {{ p.tipo_alloggio }}
-                </option>
-              </select>
-            </td>
-            <td>
-              <div v-if="h.showRates">
-                <select v-model="h.selectedRateCode">
-                  <option value="">-- seleziona fornitore --</option>
-                  <option v-for="r in h.rates" :key="r.code" :value="r.code">
-                    {{ r.name }}: {{ formatCurrency(r.rate + r.tax, h.currencySelected) }}
-                  </option>
-                </select>
-              </div>
-              <div v-else>
-                {{ h.selectedRate
-                  ? formatCurrency(h.selectedRate.rate + h.selectedRate.tax, h.currencySelected || 'EUR')
-                  : h.averageRate
-                    ? formatCurrency(h.averageRate, h.currencySelected || 'EUR')
-                    : '-' }}
-              </div>
-            </td>
-            <td>
-              <button @click="confermaHotel(h)">Salva prenotazione</button>
-              <button @click="h.showManualParams = !h.showManualParams" style="margin-left:5px;">
-                Parametri Manuali
-              </button>
-              <button v-if="h.selectedPrenotazione" @click="fetchXoteloRates(h)" style="margin-left:5px;">
-                Mostra Prezzo
-              </button>
-            </td>
-          </tr>
+  <td>{{ h.nome }}</td>
+  <td>{{ h.idHotel }}</td>
+  <td>{{ h.idTrasferta }}</td>
+  <td>{{ h.indirizzo || 'Indirizzo non disponibile' }}</td>
+  <td>{{ h.stars || 'N/A' }}</td>
+
+  <!-- ✅ NUOVI CAMPI -->
+  <td>
+    <span v-if="h.chk_in">{{ h.chk_in }}</span>
+    <span v-else>-</span>
+  </td>
+
+  <td>
+    <span v-if="h.chk_out">{{ h.chk_out }}</span>
+    <span v-else>-</span>
+  </td>
+
+  <td>
+    <select v-model.number="h.selectedPrenotazione">
+      <option value="">-- scegli una prenotazione --</option>
+      <option v-for="p in prenotazioni" :key="p.id" :value="p.id">
+        [{{ p.id }}] {{ p.nome_struttura || 'Hotel' }} - {{ p.tipo_alloggio }}
+      </option>
+    </select>
+  </td>
+
+  <td>
+    <div v-if="h.showRates">
+      <select v-model="h.selectedRateCode">
+        <option value="">-- seleziona fornitore --</option>
+        <option v-for="r in h.rates" :key="r.code" :value="r.code">
+          {{ r.name }}: {{ formatCurrency(r.rate + r.tax, h.currencySelected) }}
+        </option>
+      </select>
+    </div>
+    <div v-else>
+      {{ h.selectedRate
+        ? formatCurrency(h.selectedRate.rate + h.selectedRate.tax, h.currencySelected || 'EUR')
+        : h.averageRate
+          ? formatCurrency(h.averageRate, h.currencySelected || 'EUR')
+          : '-' }}
+    </div>
+  </td>
+
+  <td>
+    <button @click="confermaHotel(h)">Salva prenotazione</button>
+    <button @click="h.showManualParams = !h.showManualParams" style="margin-left:5px;">
+      Parametri Manuali
+    </button>
+    <button v-if="h.selectedPrenotazione" @click="fetchXoteloRates(h)" style="margin-left:5px;">
+      Mostra Prezzo
+    </button>
+  </td>
+</tr>
+
 
           <!-- Parametri manuali -->
           <tr v-if="h.showManualParams" :key="'manual-'+h.idHotel" style="background:#f0f0f0;">
@@ -245,34 +269,38 @@ async function generaSuggerimenti() {
     hotels.value = res.data.map(h => {
       const hotelKeyEntry = hotelKeyMap.value[h.id] || {};
       return {
-        idHotel: h.id,
-        idTrasferta: selectedTrasferta.value,
-        nome: h.nome,
-        lat: h.lat,
-        lon: h.lon,
-        indirizzo: null,
-        selectedPrenotazione: null,
-        selectedRateCode: '',
-        selectedRate: null,
-        stars: h.stars || null,
-        providers: h.providers || null,
-        rates: [],
-        showRates: false,
-        averageRate: null,
-        currencySelected: 'EUR',
-        showManualParams: false,
-        manualParams: { 
-          hotel_key: hotelKeyEntry.hotel_key || '', 
-          chk_in: '', 
-          chk_out:'', 
-          adults:1, 
-          children:0, 
-          rooms:1, 
-          currency:'EUR' 
-        }
-      };
-    });
+  idHotel: h.id,
+  idTrasferta: selectedTrasferta.value,
+  nome: h.nome,
+  lat: h.lat,
+  lon: h.lon,
+  indirizzo: null,
+  stars: h.stars || null,
 
+  /* ✅ AGGIUNGI QUESTI */
+  chk_in: null,
+  chk_out: null,
+
+  selectedPrenotazione: null,
+  selectedRateCode: '',
+  selectedRate: null,
+  providers: h.providers || null,
+  rates: [],
+  showRates: false,
+  averageRate: null,
+  currencySelected: 'EUR',
+  showManualParams: false,
+  manualParams: { 
+    hotel_key: hotelKeyEntry.hotel_key || '', 
+    chk_in: '', 
+    chk_out:'', 
+    adults:1, 
+    children:0, 
+    rooms:1, 
+    currency:'EUR' 
+  }
+};
+});
     hotels.value.forEach(h => {
       watch(() => h.selectedRateCode, (newCode) => { h.selectedRate = h.rates.find(r => r.code === newCode) || null; });
     });
@@ -418,10 +446,15 @@ async function fetchXoteloRates(hotel) {
 
   try {
     // Chiamata Xotelo usando solo paramId
-    const { data } = await axios.get(
-      `${BASE_URL}/hotel-api-params/xotelo/${hotel.idHotel}`,
-      { headers: getHeaders() }
-    );
+   const { data } = await axios.get(
+  `${BASE_URL}/hotel-api-params/xotelo/${hotel.idHotel}`,
+  { headers: getHeaders() }
+);
+
+    /* ✅ QUESTO È IL PASSAGGIO CHIAVE */
+    hotel.chk_in  = data.result.chk_in;
+    hotel.chk_out = data.result.chk_out;
+
 
     hotel.rates = data.result?.rates || [];
     hotel.selectedRate = null;
@@ -534,11 +567,22 @@ async function confermaHotel(hotel) {
     ? hotel.selectedRate.rate + hotel.selectedRate.tax
     : hotel.averageRate || 0;
 
+  // Funzione helper per formattare date come YYYY-MM-DD
+  function formatDateForAPI(d) {
+    if (!d) return null;
+    const dt = new Date(d);
+    if (isNaN(dt)) return null;
+    return dt.toISOString().split('T')[0];
+  }
+
   const payload = {
     id_hotel: hotel.idHotel,
     costo_alloggio: costoTotale,
     nome_struttura: hotel.nome,
-    indirizzo: hotel.indirizzo || ''
+    indirizzo: hotel.indirizzo || '',
+    citta: hotel.citta || pren.citta || '',       // citta
+    chk_in: formatDateForAPI(hotel.chk_in),
+    chk_out: formatDateForAPI(hotel.chk_out)
   };
 
   try {
