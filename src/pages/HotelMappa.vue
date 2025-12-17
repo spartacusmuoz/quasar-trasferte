@@ -19,82 +19,91 @@
     <!-- Mini‑Tabella Hotel -->
     <table border="1" style="margin-top:20px; width:100%;" v-if="selectedHotels.length > 0">
       <thead>
-  <tr>
-    <th>Hotel</th>
-    <th>ID Hotel</th>
-    <th>Trasferta</th>
-    <th>Indirizzo</th>
-    <th>Stelle</th>
-    <th>Check-in</th>
-    <th>Check-out</th>
-    <th>Prenotazione</th>
-    <th>Costo Alloggio</th>
-    <th>Azioni</th>
-  </tr>
-</thead>
+        <tr>
+          <th>Hotel</th>
+          <th>ID Hotel</th>
+          <th>Trasferta</th>
+          <th>Indirizzo</th>
+          <th>Stelle</th>
+          <th>Immagine</th>
+          <th>Check-in</th>
+          <th>Check-out</th>
+          <th>Prenotazione</th>
+          <th>Costo Alloggio</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
 
       <tbody>
         <template v-for="h in selectedHotels" :key="h.idHotel">
           <tr>
-  <td>{{ h.nome }}</td>
-  <td>{{ h.idHotel }}</td>
-  <td>{{ h.idTrasferta }}</td>
-  <td>{{ h.indirizzo || 'Indirizzo non disponibile' }}</td>
-  <td>{{ h.stars || 'N/A' }}</td>
+            <td>{{ h.nome }}</td>
+            <td>{{ h.idHotel }}</td>
+            <td>{{ h.idTrasferta }}</td>
+            <td>{{ h.indirizzo || 'Indirizzo non disponibile' }}</td>
+            <td>{{ h.stars || 'N/A' }}</td>
+            
+            <!-- ✅ IMMAGINE HOTEL -->
+            <td style="text-align: center;">
+              <img v-if="h.showImage && h.image_url" :src="h.image_url" alt="Hotel Image" style="max-width: 120px; height: auto; border-radius: 4px;" />
+              <button v-else @click="mostraImmagine(h)" style="padding: 5px 10px;">
+                {{ h.image_url ? 'Mostra Foto' : 'Nessuna Foto' }}
+              </button>
+            </td>
 
-  <!-- ✅ NUOVI CAMPI -->
-  <td>
-    <span v-if="h.chk_in">{{ h.chk_in }}</span>
-    <span v-else>-</span>
-  </td>
+            <!-- ✅ CHECK-IN -->
+            <td>
+              <span v-if="h.chk_in">{{ h.chk_in }}</span>
+              <span v-else>-</span>
+            </td>
 
-  <td>
-    <span v-if="h.chk_out">{{ h.chk_out }}</span>
-    <span v-else>-</span>
-  </td>
+            <!-- ✅ CHECK-OUT -->
+            <td>
+              <span v-if="h.chk_out">{{ h.chk_out }}</span>
+              <span v-else>-</span>
+            </td>
 
-  <td>
-    <select v-model.number="h.selectedPrenotazione">
-      <option value="">-- scegli una prenotazione --</option>
-      <option v-for="p in prenotazioni" :key="p.id" :value="p.id">
-        [{{ p.id }}] {{ p.nome_struttura || 'Hotel' }} - {{ p.tipo_alloggio }}
-      </option>
-    </select>
-  </td>
+            <td>
+              <select v-model.number="h.selectedPrenotazione">
+                <option value="">-- scegli una prenotazione --</option>
+                <option v-for="p in prenotazioni" :key="p.id" :value="p.id">
+                  [{{ p.id }}] {{ p.nome_struttura || 'Hotel' }} - {{ p.tipo_alloggio }}
+                </option>
+              </select>
+            </td>
 
-  <td>
-    <div v-if="h.showRates">
-      <select v-model="h.selectedRateCode">
-        <option value="">-- seleziona fornitore --</option>
-        <option v-for="r in h.rates" :key="r.code" :value="r.code">
-          {{ r.name }}: {{ formatCurrency(r.rate + r.tax, h.currencySelected) }}
-        </option>
-      </select>
-    </div>
-    <div v-else>
-      {{ h.selectedRate
-        ? formatCurrency(h.selectedRate.rate + h.selectedRate.tax, h.currencySelected || 'EUR')
-        : h.averageRate
-          ? formatCurrency(h.averageRate, h.currencySelected || 'EUR')
-          : '-' }}
-    </div>
-  </td>
+            <td>
+              <div v-if="h.showRates">
+                <select v-model="h.selectedRateCode">
+                  <option value="">-- seleziona fornitore --</option>
+                  <option v-for="r in h.rates" :key="r.code" :value="r.code">
+                    {{ r.name }}: {{ formatCurrency(r.rate + r.tax, h.currencySelected) }}
+                  </option>
+                </select>
+              </div>
+              <div v-else>
+                {{ h.selectedRate
+                  ? formatCurrency(h.selectedRate.rate + h.selectedRate.tax, h.currencySelected || 'EUR')
+                  : h.averageRate
+                    ? formatCurrency(h.averageRate, h.currencySelected || 'EUR')
+                    : '-' }}
+              </div>
+            </td>
 
-  <td>
-    <button @click="confermaHotel(h)">Salva prenotazione</button>
-    <button @click="h.showManualParams = !h.showManualParams" style="margin-left:5px;">
-      Parametri Manuali
-    </button>
-    <button v-if="h.selectedPrenotazione" @click="fetchXoteloRates(h)" style="margin-left:5px;">
-      Mostra Prezzo
-    </button>
-  </td>
-</tr>
-
+            <td>
+              <button @click="confermaHotel(h)">Salva prenotazione</button>
+              <button @click="h.showManualParams = !h.showManualParams" style="margin-left:5px;">
+                Parametri Manuali
+              </button>
+              <button v-if="h.selectedPrenotazione" @click="fetchXoteloRates(h)" style="margin-left:5px;">
+                Mostra Prezzo
+              </button>
+            </td>
+          </tr>
 
           <!-- Parametri manuali -->
           <tr v-if="h.showManualParams" :key="'manual-'+h.idHotel" style="background:#f0f0f0;">
-            <td colspan="8">
+            <td colspan="11">
               <div style="display:flex; flex-wrap:wrap; gap:10px;">
                 <div>
                   <label>Hotel Key:</label>
@@ -229,6 +238,7 @@ async function syncHotelKeys() {
     console.error('Errore sincronizzazione hotel keys:', err);
   }
 }
+
 // ---------- NUOVA API: Genera hotel suggeriti SOLO SE NON ESISTONO ----------
 async function generaHotelSuggeriti() {
   if (!selectedTrasferta.value) return;
@@ -269,38 +279,42 @@ async function generaSuggerimenti() {
     hotels.value = res.data.map(h => {
       const hotelKeyEntry = hotelKeyMap.value[h.id] || {};
       return {
-  idHotel: h.id,
-  idTrasferta: selectedTrasferta.value,
-  nome: h.nome,
-  lat: h.lat,
-  lon: h.lon,
-  indirizzo: null,
-  stars: h.stars || null,
+        idHotel: h.id,
+        idTrasferta: selectedTrasferta.value,
+        nome: h.nome,
+        lat: h.lat,
+        lon: h.lon,
+        indirizzo: null,
+        stars: h.stars || null,
+        image_url: h.image_url || '',
+        showImage: false,
 
-  /* ✅ AGGIUNGI QUESTI */
-  chk_in: null,
-  chk_out: null,
+        /* ✅ AGGIUNGI QUESTI */
+        chk_in: null,
+        chk_out: null,
 
-  selectedPrenotazione: null,
-  selectedRateCode: '',
-  selectedRate: null,
-  providers: h.providers || null,
-  rates: [],
-  showRates: false,
-  averageRate: null,
-  currencySelected: 'EUR',
-  showManualParams: false,
-  manualParams: { 
-    hotel_key: hotelKeyEntry.hotel_key || '', 
-    chk_in: '', 
-    chk_out:'', 
-    adults:1, 
-    children:0, 
-    rooms:1, 
-    currency:'EUR' 
-  }
-};
-});
+        selectedPrenotazione: null,
+        selectedRateCode: '',
+        selectedRate: null,
+        providers: h.providers || null,
+        rates: [],
+        showRates: false,
+        averageRate: null,
+        currencySelected: 'EUR',
+        showManualParams: false,
+        manualParams: { 
+          hotel_key: hotelKeyEntry.hotel_key || '',
+          image_url: h.image_url || '', 
+          chk_in: '', 
+          chk_out:'', 
+          adults:1, 
+          children:0, 
+          rooms:1, 
+          currency:'EUR' 
+        }
+      };
+    });
+    
     hotels.value.forEach(h => {
       watch(() => h.selectedRateCode, (newCode) => { h.selectedRate = h.rates.find(r => r.code === newCode) || null; });
     });
@@ -323,33 +337,107 @@ watch(selectedHotels, (hotelsList) => {
   });
 }, { deep: true, immediate: true });
 
+// ---------- Funzione condivisa per caricare la logica hotel ----------
+async function caricaLogicaTrasferta() {
+  selectedHotels.value = [];
+
+  await syncHotelKeys();  
+  await generaHotelSuggeriti();
+  await syncHotelKeysToApiParams();
+  await loadHotelKeys();
+  await generaSuggerimenti();
+  await loadAllPrenotazioni();
+}
+
+// ---------- Ottieni bounding box di una città nel mondo ----------
+async function getCityBounds(cityName) {
+  try {
+    const res = await axios.get('https://nominatim.openstreetmap.org/search', {
+      params: {
+        q: cityName,
+        format: 'json',
+        limit: 1
+      }
+    });
+
+    if (!res.data || res.data.length === 0) return null;
+
+    const city = res.data[0];
+
+    if (!city.boundingbox) return null;
+
+    // boundingbox = [south, north, west, east]
+    const south = parseFloat(city.boundingbox[0]);
+    const north = parseFloat(city.boundingbox[1]);
+    const west = parseFloat(city.boundingbox[2]);
+    const east = parseFloat(city.boundingbox[3]);
+
+    return L.latLngBounds([[south, west], [north, east]]);
+  } catch (err) {
+    console.error('Errore getCityBounds:', err);
+    return null;
+  }
+}
+
 // ---------- Trasferta cambia ----------
 async function onTrasfertaChange() {
   selectedHotels.value = [];
 
   await syncHotelKeys();  
-  await generaHotelSuggeriti();               // (2)
-  await syncHotelKeysToApiParams();     // (3) <-- INSERITA QUI
-  await loadHotelKeys();                // (4)
+  await generaHotelSuggeriti();
+  await syncHotelKeysToApiParams();
+  await loadHotelKeys();
   await generaSuggerimenti();
   await loadAllPrenotazioni();
 
   const t = trasferte.value.find(tr => tr.id === selectedTrasferta.value);
-  if (t && t.lat && t.lon) {
-    trasfertaPos.value = { lat: t.lat, lon: t.lon };
-    if (trasfertaMarker) map.removeLayer(trasfertaMarker);
+  if (!t) return;
 
-    trasfertaMarker = L.marker([t.lat, t.lon], { 
-      icon: L.icon({ 
-        iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-        iconSize: [30, 30] 
-      }) 
-    }).addTo(map)
-      .bindPopup(`Trasferta: ${t.luogo_destinazione}`);
+  trasfertaPos.value = { lat: t.lat, lon: t.lon };
+  if (trasfertaMarker) map.removeLayer(trasfertaMarker);
+
+  trasfertaMarker = L.marker([t.lat, t.lon], { 
+    icon: L.icon({ 
+      iconUrl: 'https://cdn-icons-png.flaticon.com/684/684908.png',
+      iconSize: [30, 30] 
+    }) 
+  }).addTo(map)
+    .bindPopup(`📍 Trasferta: ${t.luogo_destinazione}<br><small>Clicca per entrare in città</small>`);
+
+  trasfertaMarker.on('click', async () => {
+    await caricaLogicaTrasferta();
+
+    const hotelsWithCoords = hotels.value.filter(h => h.lat && h.lon);
+    if (hotelsWithCoords.length > 0) {
+      const bounds = L.latLngBounds(hotelsWithCoords.map(h => [h.lat, h.lon]));
+      bounds.extend([t.lat, t.lon]);
+      map.fitBounds(bounds, { padding: [50, 50] });
+    } else {
+      const cityBounds = await getCityBounds(t.luogo_destinazione);
+      if (cityBounds) {
+        map.fitBounds(cityBounds, { padding: [50, 50] });
+      } else {
+        map.setView([t.lat, t.lon], 16); // fallback se bounding box non disponibile
+      }
+    }
+  });
+
+  // 🔥 Anche al cambio dalla tendina facciamo lo stesso
+  const hotelsWithCoords = hotels.value.filter(h => h.lat && h.lon);
+  if (hotelsWithCoords.length > 0) {
+    const bounds = L.latLngBounds(hotelsWithCoords.map(h => [h.lat, h.lon]));
+    bounds.extend([t.lat, t.lon]);
+    map.fitBounds(bounds, { padding: [50, 50] });
   } else {
-    trasfertaPos.value = null;
+    const cityBounds = await getCityBounds(t.luogo_destinazione);
+    if (cityBounds) {
+      map.fitBounds(cityBounds, { padding: [50, 50] });
+    } else {
+      map.setView([t.lat, t.lon], 16); // fallback
+    }
   }
 }
+
 
 // ---------- Mappa ----------
 function initMap() {
@@ -445,16 +533,14 @@ async function fetchXoteloRates(hotel) {
   }
 
   try {
-    // Chiamata Xotelo usando solo paramId
-   const { data } = await axios.get(
-  `${BASE_URL}/hotel-api-params/xotelo/${hotel.idHotel}`,
-  { headers: getHeaders() }
-);
+    const { data } = await axios.get(
+      `${BASE_URL}/hotel-api-params/xotelo/${hotel.idHotel}`,
+      { headers: getHeaders() }
+    );
 
     /* ✅ QUESTO È IL PASSAGGIO CHIAVE */
     hotel.chk_in  = data.result.chk_in;
     hotel.chk_out = data.result.chk_out;
-
 
     hotel.rates = data.result?.rates || [];
     hotel.selectedRate = null;
@@ -479,15 +565,13 @@ async function fetchXoteloRates(hotel) {
 // ---------- Aggiorna parametri manuali ----------
 async function aggiornaParametriManuali(hotel) {
   try {
-    // 🔥 Controllo che l'hotel abbia l'id vero (tabella hotel_suggeriti)
     if (!hotel.idHotel) {
       alert("Errore: idHotel non valido.");
       return;
     }
 
-    // 1️⃣ Payload corretto per la tabella hotel_api_params
     const payload = {
-      id_hotel: hotel.idHotel,  // FK verso hotel_suggeriti.id
+      id_hotel: hotel.idHotel,
       hotel_key: hotel.manualParams.hotel_key,
       chk_in: hotel.manualParams.chk_in,
       chk_out: hotel.manualParams.chk_out,
@@ -500,7 +584,6 @@ async function aggiornaParametriManuali(hotel) {
 
     console.log("PAYLOAD INVIATO:", payload);
 
-    // 2️⃣ POST crea nuovo record
     const postRes = await axios.post(
       `${BASE_URL}/hotel-api-params/`,
       payload,
@@ -513,13 +596,11 @@ async function aggiornaParametriManuali(hotel) {
       return;
     }
 
-    // 🚀 ParamId della tabella hotel_api_params
     const paramId = postRes.data.id;
     hotel.latestParamId = paramId;
 
     console.log("NUOVO PARAM ID CREATO:", paramId);
 
-    // 3️⃣ GET dei parametri appena salvati
     const getRes = await axios.get(
       `${BASE_URL}/hotel-api-params/${paramId}`,
       { headers: getHeaders() }
@@ -527,7 +608,6 @@ async function aggiornaParametriManuali(hotel) {
 
     const savedParams = getRes.data;
 
-    // 🔄 Aggiorno i parametri nel frontend
     hotel.manualParams = {
       ...hotel.manualParams,
       hotel_key: savedParams.hotel_key,
@@ -538,7 +618,6 @@ async function aggiornaParametriManuali(hotel) {
       currency: savedParams.currency
     };
 
-    // 4️⃣ CHIAMATA XOTELO → con paramId corretto
     await fetchXoteloRates(hotel);
 
     alert("Parametri aggiornati e tariffe caricate con successo!");
@@ -548,7 +627,6 @@ async function aggiornaParametriManuali(hotel) {
     alert("Errore durante salvataggio parametri.");
   }
 }
-
 
 // ---------- Conferma prenotazione ----------
 async function confermaHotel(hotel) {
@@ -567,7 +645,6 @@ async function confermaHotel(hotel) {
     ? hotel.selectedRate.rate + hotel.selectedRate.tax
     : hotel.averageRate || 0;
 
-  // Funzione helper per formattare date come YYYY-MM-DD
   function formatDateForAPI(d) {
     if (!d) return null;
     const dt = new Date(d);
@@ -580,7 +657,7 @@ async function confermaHotel(hotel) {
     costo_alloggio: costoTotale,
     nome_struttura: hotel.nome,
     indirizzo: hotel.indirizzo || '',
-    citta: hotel.citta || pren.citta || '',       // citta
+    citta: hotel.citta || pren.citta || '',
     chk_in: formatDateForAPI(hotel.chk_in),
     chk_out: formatDateForAPI(hotel.chk_out)
   };
@@ -600,6 +677,11 @@ async function confermaHotel(hotel) {
     console.error('Errore conferma prenotazione', err);
     alert('Errore durante l\'aggiornamento della prenotazione.');
   }
+}
+
+// ---------- Mostra immagine hotel ----------
+function mostraImmagine(hotel) {
+  hotel.showImage = true;
 }
 
 // ---------- Mounted ----------

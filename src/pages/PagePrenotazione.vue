@@ -1,14 +1,17 @@
 <template>
   <q-page class="q-pa-md">
-    <q-card class="q-mb-md" style="max-width: 700px; margin:auto">
-      <q-card-section>
-        <div class="text-h6">Crea Nuova Prenotazione</div>
+
+    <!-- CREAZIONE PRENOTAZIONE -->
+    <q-card class="q-mb-md shadow-2" style="max-width: 700px; margin:auto">
+      <q-card-section class="bg-primary text-white">
+        <div class="text-h6">
+          <q-icon name="add_circle" class="q-mr-sm" />
+          Crea Nuova Prenotazione
+        </div>
       </q-card-section>
 
       <q-card-section>
         <q-form @submit.prevent="creaPrenotazione">
-
-          <!-- Dipendente -->
           <q-select
             filled
             label="Dipendente"
@@ -20,9 +23,9 @@
             map-options
             :loading="loadingDipendenti"
             required
+            class="q-mb-md"
           />
 
-          <!-- Trasferta -->
           <q-select
             filled
             label="Trasferta"
@@ -32,48 +35,63 @@
             option-value="value"
             emit-value
             map-options
+            class="q-mb-md"
           />
 
-          <!-- Tipo mezzo -->
-          <q-input filled label="Tipo Mezzo" v-model="prenotazione.tipo_mezzo" />
+          <q-separator class="q-my-md" />
+          <div class="text-subtitle1 text-weight-medium q-mb-md">
+            <q-icon name="directions_car" class="q-mr-sm" />
+            Trasporto
+          </div>
 
-          <!-- Costo -->
-          <q-input filled type="number" label="Costo" v-model="prenotazione.costo" />
+          <q-input filled label="Tipo Mezzo" v-model="prenotazione.tipo_mezzo" class="q-mb-md" />
+          <q-input filled type="number" label="Costo" v-model="prenotazione.costo" class="q-mb-md" />
+          <q-input filled label="Fornitore" v-model="prenotazione.fornitore" class="q-mb-md" />
+          <q-input filled type="textarea" label="Dettagli" v-model="prenotazione.dettagli" class="q-mb-md" />
 
-          <!-- Fornitore -->
-          <q-input filled label="Fornitore" v-model="prenotazione.fornitore" />
+          <q-separator class="q-my-md" />
+          <div class="text-subtitle1 text-weight-medium q-mb-md">
+            <q-icon name="hotel" class="q-mr-sm" />
+            Alloggio
+          </div>
 
-          <!-- Dettagli -->
-          <q-input filled type="textarea" label="Dettagli" v-model="prenotazione.dettagli" />
-
-          <!-- Alloggio -->
-          <q-input filled label="Città" v-model="prenotazione.citta" readonly />
+          <q-input filled label="Città" v-model="prenotazione.citta" readonly class="q-mb-md" />
           <q-select
             filled
             label="Tipo Alloggio"
             :options="['Hotel','Bed & Breakfast','Appartamento','Airbnb','Ostello','Altro']"
             v-model="prenotazione.tipo_alloggio"
+            class="q-mb-md"
           />
-          <q-input filled label="Nome Struttura" v-model="prenotazione.nome_struttura" />
-          <q-input filled type="number" label="Costo Alloggio" v-model="prenotazione.costo_alloggio" />
-          <q-input filled label="Indirizzo" v-model="prenotazione.indirizzo" />
+          <q-input filled label="Nome Struttura" v-model="prenotazione.nome_struttura" class="q-mb-md" />
+          <q-input filled type="number" label="Costo Alloggio" v-model="prenotazione.costo_alloggio" class="q-mb-md" />
+          <q-input filled label="Indirizzo" v-model="prenotazione.indirizzo" class="q-mb-md" />
 
-          <!-- Upload biglietto -->
+          <q-separator class="q-my-md" />
+          <div class="text-subtitle1 text-weight-medium q-mb-md">
+            <q-icon name="description" class="q-mr-sm" />
+            Documenti
+          </div>
+
           <q-uploader
             label="Biglietto"
             @added="onFileAdded"
             :hide-upload-btn="true"
+            class="q-mb-md"
           />
 
-          <q-btn label="Crea Prenotazione" type="submit" color="primary" class="q-mt-md" />
+          <q-btn label="Crea Prenotazione" type="submit" color="primary" size="lg" class="full-width" />
         </q-form>
       </q-card-section>
     </q-card>
 
-    <!-- Tabella Prenotazioni -->
-    <q-card class="q-mt-lg">
-      <q-card-section>
-        <div class="text-h6">Elenco Prenotazioni</div>
+    <!-- TABELLA PRENOTAZIONI -->
+    <q-card class="q-mt-lg shadow-2">
+      <q-card-section class="bg-grey-2">
+        <div class="text-h6">
+          <q-icon name="list" class="q-mr-sm" />
+          Elenco Prenotazioni
+        </div>
       </q-card-section>
 
       <q-table
@@ -82,8 +100,170 @@
         row-key="id"
         flat
         bordered
-      />
+        :rows-per-page-options="[10, 25, 50]"
+      >
+        <template #body-cell-dettagli="props">
+          <q-td align="center">
+            <q-btn 
+              flat 
+              dense 
+              color="primary" 
+              icon="visibility" 
+              @click="apriDialogPrenotazione(props.row)"
+            >
+              <q-tooltip>Visualizza Dettagli</q-tooltip>
+            </q-btn>
+          </q-td>
+        </template>
+      </q-table>
     </q-card>
+
+    <!-- DIALOG DETTAGLI -->
+    <q-dialog v-model="showDialog" maximized transition-show="slide-up" transition-hide="slide-down">
+      <q-card v-if="prenotazioneSelezionata">
+        <q-bar class="bg-primary text-white">
+          <q-icon name="event" size="md" />
+          <div class="text-h6 q-ml-sm">Prenotazione #{{ prenotazioneSelezionata.id }}</div>
+          <q-space />
+          <q-btn flat dense icon="close" v-close-popup />
+        </q-bar>
+
+        <q-card-section style="max-height:80vh; overflow-y:auto">
+          
+          <!-- INFORMAZIONI GENERALI -->
+          <q-card flat bordered class="q-mb-md bg-grey-1">
+            <q-card-section>
+              <div class="row items-center q-gutter-sm q-mb-sm">
+                <q-icon name="person" size="32px" color="accent" />
+                <div class="text-h6">Informazioni Generali</div>
+              </div>
+              <q-list dense>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>Dipendente</q-item-label>
+                    <q-item-label>{{ prenotazioneSelezionata.dipendente_nome || '-' }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>Città</q-item-label>
+                    <q-item-label>{{ prenotazioneSelezionata.citta || '-' }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-card-section>
+          </q-card>
+
+          <!-- Trasporto -->
+          <q-card flat bordered class="q-mb-md" v-if="prenotazioneSelezionata.tipo_mezzo">
+            <q-card-section>
+              <div class="row items-center q-gutter-sm q-mb-sm">
+                <q-icon :name="iconForTrasporto(prenotazioneSelezionata.tipo_mezzo)" size="32px" color="primary" />
+                <div class="text-h6">Trasporto</div>
+              </div>
+              <q-list dense>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>Tipo</q-item-label>
+                    <q-item-label>{{ prenotazioneSelezionata.tipo_mezzo || '-' }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>Fornitore</q-item-label>
+                    <q-item-label>{{ prenotazioneSelezionata.fornitore || '-' }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>Costo</q-item-label>
+                    <q-item-label>{{ prenotazioneSelezionata.costo ?? 0 }} €</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>Dettagli</q-item-label>
+                    <q-item-label>{{ prenotazioneSelezionata.dettagli || '-' }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-card-section>
+          </q-card>
+
+          <!-- Alloggio -->
+          <q-card flat bordered class="q-mb-md">
+            <q-card-section>
+              <div class="row items-center q-gutter-sm q-mb-sm">
+                <q-icon :name="iconForAlloggio(prenotazioneSelezionata.tipo_alloggio)" size="32px" color="secondary" />
+                <div class="text-h6">Alloggio</div>
+              </div>
+              <q-list dense>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>Tipo</q-item-label>
+                    <q-item-label>{{ prenotazioneSelezionata.tipo_alloggio || '-' }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>Struttura</q-item-label>
+                    <q-item-label>{{ prenotazioneSelezionata.nome_struttura || '-' }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>Indirizzo</q-item-label>
+                    <q-item-label>{{ prenotazioneSelezionata.indirizzo || '-' }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>Costo</q-item-label>
+                    <q-item-label>{{ prenotazioneSelezionata.costo_alloggio ?? 0 }} €</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-card-section>
+          </q-card>
+
+          <!-- Date -->
+          <q-card flat bordered>
+            <q-card-section>
+              <div class="row items-center q-gutter-sm q-mb-sm">
+                <q-icon name="calendar_today" size="32px" color="accent" />
+                <div class="text-h6">Date</div>
+              </div>
+              <q-list dense>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>Check-in</q-item-label>
+                    <q-item-label>{{ prenotazioneSelezionata.chk_in || '-' }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section>
+                    <q-item-label caption>Check-out</q-item-label>
+                    <q-item-label>{{ prenotazioneSelezionata.chk_out || '-' }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-card-section>
+          </q-card>
+        </q-card-section>
+
+        <q-card-actions align="center" class="q-pa-md">
+          <q-btn
+            color="primary"
+            label="Visualizza File"
+            icon="description"
+            :disable="!prenotazioneSelezionata.file_biglietto"
+            @click="visualizzaFile(prenotazioneSelezionata)"
+          />
+          <q-btn color="negative" label="Chiudi" icon="close" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
   </q-page>
 </template>
 
@@ -99,10 +279,12 @@ const ADMIN_ID = 6
 // ====== State ======
 const dipendentiOptions = ref([])
 const trasferteOptions = ref([])
-const trasferteAll = ref([]) // tutte le trasferte, serve per popolare prenotazioni
+const trasferteAll = ref([])
 const prenotazioni = ref([])
 const loadingDipendenti = ref(true)
 const selectedDipendenteId = ref(null)
+const showDialog = ref(false)
+const prenotazioneSelezionata = ref(null)
 
 const prenotazione = ref({
   id_trasferta: null,
@@ -118,23 +300,45 @@ const prenotazione = ref({
   citta: ''
 })
 
+// ====== Funzioni per le icone ======
+const iconForTrasporto = tipo => {
+  if (!tipo) return 'help_outline'
+  const t = tipo.toLowerCase()
+  if (t.includes('aereo') || t.includes('flight')) return 'flight'
+  if (t.includes('treno') || t.includes('train')) return 'train'
+  if (t.includes('taxi') || t.includes('auto') || t.includes('car')) return 'directions_car'
+  if (t.includes('bus')) return 'directions_bus'
+  return 'commute'
+}
+
+const iconForAlloggio = tipo => {
+  if (!tipo) return 'house'
+  const t = tipo.toLowerCase()
+  if (t.includes('hotel')) return 'hotel'
+  if (t.includes('bed') || t.includes('breakfast')) return 'holiday_village'
+  if (t.includes('appartamento')) return 'apartment'
+  if (t.includes('airbnb')) return 'home_work'
+  if (t.includes('ostello')) return 'groups'
+  return 'house'
+}
+
 // ====== Colonne tabella ======
 const columns = [
-  { name: 'id', label: 'ID', field: 'id', sortable: true },
-  { name: 'dipendente', label: 'Dipendente', field: 'dipendente_nome' },
-  { name: 'trasferta', label: 'Trasferta', field: 'id_trasferta' },
-  { name: 'tipo_mezzo', label: 'Tipo Mezzo', field: 'tipo_mezzo' },
-  { name: 'fornitore', label: 'Fornitore', field: 'fornitore' },
-  { name: 'costo', label: 'Costo Mezzo', field: 'costo' },
-  { name: 'dettagli', label: 'Dettagli', field: 'dettagli' },
-  { name: 'tipo_alloggio', label: 'Tipo Alloggio', field: 'tipo_alloggio' },
-  { name: 'nome_struttura', label: 'Struttura', field: 'nome_struttura' },
-  { name: 'costo_alloggio', label: 'Costo Alloggio', field: 'costo_alloggio' },
-  { name: 'indirizzo', label: 'Indirizzo', field: 'indirizzo' },
-  { name: 'chk_in', label: 'Check-In', field: 'chk_in', sortable: true },
-  { name: 'chk_out', label: 'Check-Out', field: 'chk_out', sortable: true },
-  { name: 'citta', label: 'Città', field: 'citta' }
+  { name: 'id', label: 'ID', field: 'id', sortable: true, align: 'center' },
+  { name: 'dipendente', label: 'Dipendente', field: 'dipendente_nome', align: 'left' },
+  { name: 'citta', label: 'Città', field: 'citta', align: 'left' },
+  { name: 'tipo_mezzo', label: 'Tipo Mezzo', field: 'tipo_mezzo', align: 'left' },
+  { name: 'tipo_alloggio', label: 'Tipo Alloggio', field: 'tipo_alloggio', align: 'left' },
+  { name: 'nome_struttura', label: 'Struttura', field: 'nome_struttura', align: 'left' },
+  { name: 'chk_in', label: 'Check-In', field: 'chk_in', sortable: true, align: 'center' },
+  { name: 'chk_out', label: 'Check-Out', field: 'chk_out', sortable: true, align: 'center' },
+  { name: 'dettagli', label: 'Azioni', field: 'dettagli', align: 'center' }
 ]
+
+const apriDialogPrenotazione = (pren) => {
+  prenotazioneSelezionata.value = pren
+  showDialog.value = true
+}
 
 // ====== Caricamento dipendenti ======
 const loadDipendenti = async () => {
@@ -157,9 +361,9 @@ const loadDipendenti = async () => {
 const loadTrasferte = async () => {
   trasferteOptions.value = []
   prenotazione.value.id_trasferta = null
+  prenotazione.value.citta = ''
   if (!selectedDipendenteId.value) return
 
-  // Filtra le trasferte per dipendente
   trasferteOptions.value = trasferteAll.value
     .filter(t => t.id_dipendente === selectedDipendenteId.value)
     .map(t => ({
@@ -170,7 +374,7 @@ const loadTrasferte = async () => {
     }))
 }
 
-// ====== Caricamento tutte le trasferte (necessario per popolare prenotazioni) ======
+// ====== Caricamento tutte le trasferte ======
 const loadTrasferteAll = async () => {
   try {
     const { data } = await axios.get(`${BASE_URL}/trasferte`, {
@@ -188,8 +392,16 @@ const loadTrasferteAll = async () => {
   }
 }
 
-// Watch sul dipendente selezionato
 watch(selectedDipendenteId, loadTrasferte)
+
+watch(() => prenotazione.value.id_trasferta, (newVal) => {
+  if (newVal) {
+    const trasferta = trasferteAll.value.find(t => t.id === newVal)
+    if (trasferta) {
+      prenotazione.value.citta = trasferta.luogo_destinazione
+    }
+  }
+})
 
 // ====== Upload file ======
 const onFileAdded = (files) => {
@@ -203,7 +415,6 @@ const creaPrenotazione = async () => {
     return
   }
 
-  // Trova la trasferta selezionata
   const trasferta = trasferteAll.value.find(t => t.id === prenotazione.value.id_trasferta)
 
   const payload = {
@@ -232,7 +443,7 @@ const creaPrenotazione = async () => {
         'Content-Type': 'multipart/form-data'
       }
     })
-    $q.notify({ type: 'positive', message: 'Prenotazione creata!' })
+    $q.notify({ type: 'positive', message: 'Prenotazione creata con successo!' })
     loadPrenotazioni()
 
     // Reset form
@@ -249,6 +460,7 @@ const creaPrenotazione = async () => {
       indirizzo: '',
       citta: ''
     }
+    selectedDipendenteId.value = null
   } catch (err) {
     console.error(err)
     $q.notify({ type: 'negative', message: 'Errore nella creazione prenotazione' })
@@ -262,35 +474,72 @@ const loadPrenotazioni = async () => {
       headers: { 'x-user-id': ADMIN_ID }
     })
 
-    prenotazioni.value = data.map(pren => {
-      // trova la trasferta corrispondente
-      const trasferta = trasferteAll.value.find(t => t.id === pren.id_trasferta)
-      const idDip = trasferta ? trasferta.id_dipendente : null
-
-      // trova il nome del dipendente
-      const dip = dipendentiOptions.value.find(d => d.value === idDip)
-      const dipendente_nome = dip ? dip.label : ''
-
-      // prende la città dalla trasferta
-      const citta = trasferta ? trasferta.luogo_destinazione : ''
-
-      return {
-        ...pren,
-        id_dipendente: idDip,
-        dipendente_nome,
-        citta
-      }
-    })
+    prenotazioni.value = data
+      .sort((a, b) => b.id - a.id)
+      .map(pren => {
+        const trasferta = trasferteAll.value.find(t => t.id === pren.id_trasferta)
+        const idDip = trasferta ? trasferta.id_dipendente : null
+        const dip = dipendentiOptions.value.find(d => d.value === idDip)
+        const dipendente_nome = dip ? dip.label : '-'
+        const citta = trasferta ? trasferta.luogo_destinazione : '-'
+        return { 
+          ...pren, 
+          id_dipendente: idDip, 
+          dipendente_nome, 
+          citta, 
+          file_biglietto: pren.file_biglietto 
+        }
+      })
   } catch (err) {
     console.error(err)
     $q.notify({ type: 'negative', message: 'Errore caricamento prenotazioni' })
   }
 }
 
+// ====== Visualizza file - FIX PRINCIPALE ======
+const visualizzaFile = async (pren) => {
+  try {
+    // Trova la trasferta della prenotazione
+    const trasferta = trasferteAll.value.find(t => t.id === pren.id_trasferta)
+    if (!trasferta) {
+      $q.notify({ type: 'negative', message: 'Trasferta non trovata' })
+      return
+    }
+
+    const res = await axios.get(`${BASE_URL}/prenotazioni/file/${pren.id}`, {
+      headers: { 'x-user-id': trasferta.id_dipendente },
+      responseType: 'blob'
+    })
+
+    const mime = res.headers['content-type'] || 'application/octet-stream'
+    const blob = new Blob([res.data], { type: mime })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+
+  } catch (err) {
+    console.error(err)
+    $q.notify({ type: 'negative', message: 'Errore caricamento file' })
+  }
+}
+
 // ====== onMounted ======
 onMounted(async () => {
   await loadDipendenti()
-  await loadTrasferteAll() // carica tutte le trasferte
+  await loadTrasferteAll()
   loadPrenotazioni()
 })
 </script>
+
+<style scoped>
+.shadow-2 {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+:deep(.q-table thead tr) {
+  background-color: #f5f5f5;
+}
+
+:deep(.q-table tbody td) {
+  padding: 12px 8px;
+}
+</style>
