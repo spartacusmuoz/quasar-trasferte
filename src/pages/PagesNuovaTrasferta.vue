@@ -82,6 +82,10 @@ const note_dipendente = ref('')
 const dipendentiOptions = ref([])
 const loadingDipendenti = ref(true)
 
+// Ruolo e ID del dipendente loggato
+const currentRole = localStorage.getItem('role') || 'dipendente'
+const currentUserId = parseInt(localStorage.getItem('userId')) // salva questo al login
+
 // =======================
 // Carica lista dipendenti
 // =======================
@@ -89,10 +93,23 @@ const loadDipendenti = async () => {
   loadingDipendenti.value = true
   try {
     const { data } = await axios.get(`${BASE_URL}/admin/dipendenti`)
-    dipendentiOptions.value = data.map(d => ({
+
+    let filtered = data
+    if (currentRole === 'dipendente') {
+      // Mostra solo se stesso
+      filtered = data.filter(d => d.id === currentUserId)
+    }
+
+    dipendentiOptions.value = filtered.map(d => ({
       label: `${d.nome} ${d.cognome}`,
       value: d.id
     }))
+
+    // Se è dipendente, seleziona automaticamente se stesso
+    if (currentRole === 'dipendente' && filtered.length === 1) {
+      selectedDipendenteId.value = filtered[0].id
+    }
+
   } catch (err) {
     console.error('Errore caricamento dipendenti', err)
     $q.notify({ type: 'negative', message: 'Impossibile caricare i dipendenti' })
@@ -132,7 +149,7 @@ const submitTrasferta = async () => {
     console.log('Trasferta creata:', res.data)
 
     // Reset form
-    selectedDipendenteId.value = null
+    if (currentRole !== 'dipendente') selectedDipendenteId.value = null
     data_partenza.value = new Date().toISOString().split('T')[0]
     data_rientro.value = new Date().toISOString().split('T')[0]
     luogo_destinazione.value = ''

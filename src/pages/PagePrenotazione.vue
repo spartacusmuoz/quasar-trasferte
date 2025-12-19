@@ -44,7 +44,17 @@
             Trasporto
           </div>
 
-          <q-input filled label="Tipo Mezzo" v-model="prenotazione.tipo_mezzo" class="q-mb-md" />
+          <q-select
+  filled
+  label="Tipo Mezzo"
+  v-model="prenotazione.tipo_mezzo"
+  :options="tipoMezzoOptions"
+  emit-value
+  map-options
+  class="q-mb-md"
+  required
+/>
+
           <q-input filled type="number" label="Costo" v-model="prenotazione.costo" class="q-mb-md" />
           <q-input filled label="Fornitore" v-model="prenotazione.fornitore" class="q-mb-md" />
           <q-input filled type="textarea" label="Dettagli" v-model="prenotazione.dettagli" class="q-mb-md" />
@@ -285,6 +295,12 @@ const loadingDipendenti = ref(true)
 const selectedDipendenteId = ref(null)
 const showDialog = ref(false)
 const prenotazioneSelezionata = ref(null)
+const tipoMezzoOptions = [
+  { label: 'Aereo', value: 'aereo' },
+  { label: 'Treno', value: 'treno' },
+  { label: 'Auto',  value: 'auto'  },
+  { label: 'Altro', value: 'altro' }
+]
 
 const prenotazione = ref({
   id_trasferta: null,

@@ -5,100 +5,100 @@
         <div class="text-h6">Nuova Spesa</div>
       </q-card-section>
 
-```
-  <q-card-section>
-    <q-form @submit.prevent="submitSpesa">
+      <q-card-section>
+        <q-form @submit.prevent="submitSpesa">
 
-      <!-- Select Dipendente (placeholder finché non c'è login) -->
-      <q-select
-        filled
-        v-model="selectedDipendenteId"
-        :options="dipendentiOptions"
-        label="Dipendente"
-        emit-value
-        map-options
-        required
-      />
+          <!-- Select Dipendente (mostra solo utente loggato) -->
+          <q-select
+            filled
+            v-model="selectedDipendenteId"
+            :options="dipendentiOptions"
+            label="Dipendente"
+            emit-value
+            map-options
+            required
+            disable
+          />
 
-      <!-- Select Trasferta dell'utente -->
-      <q-select
-        filled
-        v-model="selectedTrasfertaId"
-        :options="trasferteOptions"
-        label="Trasferta"
-        option-label="label"
-        option-value="value"
-        emit-value
-        map-options
-        :loading="loadingTrasferte"
-        required
-      />
+          <!-- Select Trasferta dell'utente -->
+          <q-select
+            filled
+            v-model="selectedTrasfertaId"
+            :options="trasferteOptions"
+            label="Trasferta"
+            option-label="label"
+            option-value="value"
+            emit-value
+            map-options
+            :loading="loadingTrasferte"
+            required
+          />
 
-      <!-- Categoria -->
-      <q-input filled v-model="categoria" label="Categoria" required />
+          <!-- Categoria -->
+          <q-input filled v-model="categoria" label="Categoria" required />
 
-      <!-- Importo -->
-      <q-input
-        filled
-        v-model.number="importo"
-        label="Importo"
-        type="number"
-        required
-      />
+          <!-- Importo -->
+          <q-input
+            filled
+            v-model.number="importo"
+            label="Importo"
+            type="number"
+            required
+          />
 
-      <!-- Tipo Scontrino -->
-      <q-select
-        filled
-        v-model="tipo_scontrino"
-        :options="tipiScontrino"
-        label="Tipo Scontrino"
-        emit-value
-        map-options
-        required
-      />
+          <!-- Tipo Scontrino -->
+          <q-select
+            filled
+            v-model="tipo_scontrino"
+            :options="tipiScontrino"
+            label="Tipo Scontrino"
+            emit-value
+            map-options
+            required
+          />
 
-      <!-- Data -->
-      <q-input
-        filled
-        v-model="data_spesa"
-        label="Data Spesa"
-        type="date"
-        required
-      />
+          <!-- Data -->
+          <q-input
+            filled
+            v-model="data_spesa"
+            label="Data Spesa"
+            type="date"
+            required
+          />
 
-      <!-- File uploader -->
-      <q-uploader
-        label="Allega file"
-        multiple
-        ref="uploader"
-        hide-upload-btn
-        accept="image/*,.pdf"
-        style="margin-top: 10px"
-      />
+          <!-- File uploader -->
+          <q-uploader
+            label="Allega file"
+            multiple
+            ref="uploader"
+            hide-upload-btn
+            accept="image/*,.pdf"
+            style="margin-top: 10px"
+          />
 
-      <div class="q-mt-md">
-        <q-btn label="Invia Spesa" color="primary" type="submit" />
-      </div>
+          <div class="q-mt-md">
+            <q-btn label="Invia Spesa" color="primary" type="submit" />
+          </div>
 
-    </q-form>
-  </q-card-section>
-</q-card>
-```
-
+        </q-form>
+      </q-card-section>
+    </q-card>
   </q-page>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 const $q = useQuasar()
+const router = useRouter()
 const BASE_URL = 'http://127.0.0.1:8000'
 
-// ===== Dipendente placeholder =====
-const selectedDipendenteId = ref(1)
-const dipendentiOptions = ref([{ label: 'Utente Test', value: 1 }])
+// ===== Dipendente loggato =====
+const selectedDipendenteId = ref(null)
+const dipendentiOptions = ref([])
 
 // ===== Trasferte utente =====
 const selectedTrasfertaId = ref(null)
@@ -122,13 +122,52 @@ const tipiScontrino = [
 ]
 
 // =======================
+// Carica dati utente loggato
+// =======================
+const loadUserData = async () => {
+  const userId = localStorage.getItem('userId')
+  const token = localStorage.getItem('token')
+
+  if (!userId || !token) {
+    $q.notify({ type: 'negative', message: 'Sessione scaduta. Effettua il login.' })
+    router.push('/login')
+    return
+  }
+
+  selectedDipendenteId.value = parseInt(userId)
+
+  try {
+    // Carica info dipendente
+    const { data } = await axios.get(`${BASE_URL}/dipendenti/${userId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    
+    dipendentiOptions.value = [{
+      label: `${data.nome} ${data.cognome}`,
+      value: data.id
+    }]
+  } catch (err) {
+    console.error('Errore caricamento dipendente:', err)
+    dipendentiOptions.value = [{
+      label: 'Utente corrente',
+      value: selectedDipendenteId.value
+    }]
+  }
+}
+
+// =======================
 // Carica trasferte dell'utente
 // =======================
 const loadTrasferte = async () => {
   loadingTrasferte.value = true
+  const token = localStorage.getItem('token')
+
   try {
     const { data } = await axios.get(`${BASE_URL}/trasferte/miei`, {
-      headers: { 'x-user-id': selectedDipendenteId.value }
+      headers: { 
+        'x-user-id': selectedDipendenteId.value,
+        'Authorization': `Bearer ${token}`
+      }
     })
     trasferteOptions.value = data.map(t => ({
       label: `${t.luogo_destinazione} (${t.data_partenza} - ${t.data_rientro})`,
@@ -141,8 +180,6 @@ const loadTrasferte = async () => {
     loadingTrasferte.value = false
   }
 }
-
-onMounted(loadTrasferte)
 
 // =======================
 // Submit spesa
@@ -163,9 +200,14 @@ const submitSpesa = async () => {
   const files = uploader.value?.files || []
   files.forEach(f => formData.append('files', f))
 
+  const token = localStorage.getItem('token')
+
   try {
     await axios.post(`${BASE_URL}/spese/`, formData, {
-      headers: { 'x-user-id': selectedDipendenteId.value }
+      headers: { 
+        'x-user-id': selectedDipendenteId.value,
+        'Authorization': `Bearer ${token}`
+      }
     })
     $q.notify({ type: 'positive', message: 'Spesa caricata!' })
 
@@ -181,4 +223,14 @@ const submitSpesa = async () => {
     $q.notify({ type: 'negative', message: 'Errore durante il caricamento della spesa' })
   }
 }
+
+// =======================
+// OnMounted
+// =======================
+onMounted(async () => {
+  await loadUserData()
+  if (selectedDipendenteId.value) {
+    await loadTrasferte()
+  }
+})
 </script>

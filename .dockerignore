@@ -1,0 +1,28 @@
+# Node / Quasar
+node_modules
+dist
+*.log
+.npm
+.eslintcache
+
+# Python / FastAPI
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Git
+.git
+.gitignore
+
+# Ambiente locale
+.env
+.DS_Store
+*.swp
+
+# Docker
+Dockerfile
+docker-compose.yml
+
