@@ -153,7 +153,7 @@ import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const BASE_URL = 'http://localhost:8000';
+const BASE_URL = 'http://127.0.0.1:8000';
 const token = localStorage.getItem('access_token');
 const USER_ID = 6;
 
